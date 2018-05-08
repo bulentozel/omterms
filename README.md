@@ -151,7 +151,7 @@ where
 It should be noted that frequency counts are calculated after having applied the same tokenization and post processing such as excluding stop-words, pancuations, rare terms, etc both on the reference corpus and the specific corpus.
 
 
-## 4. Some thoughts an a conceptual approach at using the extracted keywords or phrases to predict topical relevance of a new text. 
+## 4. Some thoughts on a conceptual approach at using the extracted keywords or phrases to predict topical relevance of a new text
 
 Using the outcome of this technique to score arbitrary input texts against a single issue such as financial sustainability or against a set of issues such as the 10 basic human values requires a set of normalization of the raw scores and their rescaling/transformation.
 
