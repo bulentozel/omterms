@@ -36,8 +36,9 @@ entirely. More specifically, in use cases where the objective is being
 able to classify and differentiate a number of topics or issues from
 each other and where there are sufficient data that fulfills the
 underlining assumptions of NMF, LDA or LSI based approaches, then tools
-from, for instance, Python’s sklearn.decomposition package are
-suggested.
+from, for instance, Python’s
+`sklearn.decomposition <http://scikit-learn.org/stable/modules/decomposition.html#non-negative-matrix-factorization-nmf-or-nnmf>`__
+package are suggested.
 
 Nevertheless, the outputs of this module, such as its normalized term
 frequencies or the specificity scores it associates to them regarding to
@@ -56,15 +57,15 @@ Collaborators(s): \* Hamza Zeytinoglu
 Install
 -------
 
-Via Python's standard distribution channel PyPI (soon)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A. Via Python's standard distribution channel PyPI
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
 
     pip install omterms
 
-Via its GitHub source
-~~~~~~~~~~~~~~~~~~~~~
+B. Via from its GitHub source
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
 
