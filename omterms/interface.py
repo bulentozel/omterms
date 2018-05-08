@@ -4,53 +4,68 @@
 Author: Bulent Ozel
 e-mail: bulent.ozel@gmail.com
 
-The application interface provides an encapsualtion and standardization at preparing a set of texts for further analyses. The standardized term extraction process covers tokenization, counting both raw and normalized, cleaning, stemming(optional), and scoring(optional) chioices. The tabulated output can be exported in .csv file format and/or Pandas dataframe format.
+The application interface provides an encapsualtion and standardization at preparing a set of texts for
+further analyses. The standardized term extraction process covers tokenization, counting both raw and 
+normalized, cleaning, stemming(optional), and scoring(optional) chioices. The tabulated output can be
+exported in .csv file format and/or Pandas dataframe format.
 
 The input text(s) can be provided in any of the following formats:
 - raw text
 - tokenized text
 - tokenized and counted
 
-In the same manner if a background courpus based scoring is desired then the reference corpus can be provided in any of the above formats. Depending on the desired actions on the input text, the output may contain not only raw and normalized term frequency counts but also stems of the terms its frequency count in the background corpus, when provided, and term's log likelihood weight wrt to its prevalance in the reference corpus.
+In the same manner if a background courpus based scoring is desired then the reference corpus
+can be provided in any of the above formats. Depending on the desired actions on the input text,
+the output may contain not only raw and normalized term frequency counts but also stems of
+the terms its frequency count in the background corpus, when provided, and term's log likelihood
+weight wrt to its prevalance in the reference corpus.
 
-For deatils please see the README and tuturials that comes alongs with installation of this package.
+For deatils please see the README and tuturials that comes alongs with installation 
+of this package.
 
 Attributes:
-    OUTPUT_FOLDER (file path): The folder to export the tabulated outputs in .csv files.
+    OUTPUT_FOLDER (file path): The folder to export the tabulated outputs 
+        in .csv files.
     
-    OUTPUT_FNAME  (file name): The default output file name where results for multiple 
-        texts are merged and presented.
+    OUTPUT_FNAME  (file name): The default output file name where results 
+        for multiple texts are merged and presented.
         
     STOPWORDS_STANDARD (file path): The location of standard stopward list,
         if desired and exists.
         
-    STOPWORDS_SPECIFIC (file path): The location of topic(s) specific stopward lis,
-        if desired and exists. 
+    STOPWORDS_SPECIFIC (file path): The location of topic(s) specific stopward
+        list, if desired and exists. 
         
-    NOTALLOWED (:obj:`list` of `str`): The list of symbols that would flag the removal of the term,
-        if needed.
+    NOTALLOWED (:obj:`list` of `str`): The list of symbols that would flag the
+        removal of the term, if needed.
         
-        Note: The removal would not take place if the term is a specific term or marked as an exception.
+        Note: The removal would not take place if the term is a specific term or
+            marked as an exception.
         
-    TERMS_SPECIFIC (file path): The location of exception list of terms which is shielded from cleaning process,
-        if needed.
+    TERMS_SPECIFIC (file path): The location of exception list of terms which is
+        shielded from cleaning process, if needed.
         
     TOKENIZER_FUNC (x :obj:`str` -> y: :obj:`str`): A tokenizer function.
     
-    STEMMER_FUNC (x :obj:`str` -> y: :obj:`str`): A stemmer function, if needed
+    STEMMER_FUNC (x :obj:`str` -> y: :obj:`str`): A stemmer function,
+        if needed
     
     MIN_LENGTH (:obj:`int`): The minimum allowed term length.
     
-    MIN_FREQ (:obj:`float`): The minimum allowed frequency count for the tabuleted outputs.
+    MIN_FREQ (:obj:`float`): The minimum allowed frequency count for
+        the tabuleted outputs.
     
-    MODEL_THRESHOLD (:obj:`int`): if scoring is requested and if the input text is not driven from
-        the reference corpus, then the paramter is used at training the predection model for the terms
-        that don't occure in the reference corpus.
+    MODEL_THRESHOLD (:obj:`int`): if scoring is requested and if the input text
+        is not driven from the reference corpus, then the paramter is used at training
+        the predection model for the terms that don't occure in the reference corpus.
 
 Todo:
-    * Re-implement the module as a memoized object either via a class or a via wrapper function.
-    * Add a functionality where the configuration paramters can be loaded from a JSON file.
-    * Make tokenization an optional process, for the cases where the input is already provided in tokens.
+    * Re-implement the module as a memoized object either via a class or
+        a via wrapper function.
+    * Add a functionality where the configuration paramters can be loaded
+        from a JSON file.
+    * Make tokenization an optional process, for the cases where the input
+        is already provided in tokens.
 
 """
 
@@ -111,37 +126,38 @@ def extract_terms(texts,
         texts (:obj:`str` or :obj:`dict` of `str` or  :obj:`omterms.WikiArticles`):
         The input text can be any of the following:
                 - a string,
-                - or a dictionary of strings where the key denotes the topic or
-                    any desired label/annotation regarding the text,
-                - or a special data holder which contains labeled text scraped from
-                    Wikipedia articles.
+                - or a dictionary of strings where the key denotes the topic 
+                    or any desired label/annotation regarding the text,
+                - or a special data holder which contains labeled text scraped
+                    from Wikipedia articles.
                 
         tokenizer (x :obj:`str` -> y: :obj:`str`): The tokenizer,
             (defualt omterms.tokenizer.tokenize_strip_non_words).
                 
         merge (:obj:`bool`): When a collection of text is provided via a dict or
-            WikiArticles, the parmater detertmines whether they should be conactinated
-            for the term extraction (default False).
+            WikiArticles, the parmater detertmines whether they should be 
+            conactinated for the term extraction (default False).
              
         min_termlength (:obj:`int`): The minimum allowed term length (default 1).
         
-        min_tf (:obj:`int`): The minimum allowed frequency count for the tabuleted outputs
-            (default 4).
+        min_tf (:obj:`int`): The minimum allowed frequency count for the tabuleted
+            outputs (default 4).
                 
-        topics (:obj:`list` of `str`, optional): The list of topics from the input texts
-            to be considered (default Empty).
+        topics (:obj:`list` of `str`, optional): The list of topics from the input
+            texts to be considered (default Empty).
             
-            If topic list is not provided and the merge is not requested but the input text
-            is given either via dict or via the WikiArticles data holder, then the topic list
-            will be driven from the input collection automatically.
+            If topic list is not provided and the merge is not requested but the
+            input text is given either via dict or via the WikiArticles data holder,
+            then the topic list will be driven from the input collection automatically.
        
-        extra_process (:obj:`list` of `str`, optional): Whether stemming and/or scoring is
-            requested (default Empty).
+        extra_process (:obj:`list` of `str`, optional): Whether stemming and/or scoring
+            is requested (default Empty).
             - 'stem' is used/needed to flag stemming.
-            - 'compare' is used/needed to scoring texts against the designated reference corpus. 
+            - 'compare' is used/needed to scoring texts against the designated
+                reference corpus. 
        
-        stemmer (x :obj:`str` -> y: :obj:`str`, optional): A stemmer function, if needed
-            (default omterms.stemmer.porter).
+        stemmer (x :obj:`str` -> y: :obj:`str`, optional): A stemmer function,
+            if needed (default omterms.stemmer.porter).
        
         refcorpus (:obj:`str`
                    or :obj:`list` of `str`
@@ -155,38 +171,42 @@ def extract_terms(texts,
                 - list of words: List of words or tokens.
                 - or a dictionary of strings where the text from the text will
                     be unified for the reference corpus.
-                - or a special data holder which contains labeled text scraped from Wikipedia
-                    articles, where all the texts from the collection will be combined to be used as
-                    the reference background corpus.
+                - or a special data holder which contains labeled text scraped from
+                    Wikipedia articles, where all the texts from the collection will 
+                    be combined to be used as the reference background corpus.
     
-        export (:obj:`bool`, optional): Whether the resulting tables should be exported 
-            (default False).
+        export (:obj:`bool`, optional): Whether the resulting tables should be
+            exported (default False).
         
         basefname (:obj:`str`, optional): The output table name/prefix. Is effective
             only when export is requested (default 'omsterms.csv').
         
-        outputdir (:obj:`str`, optional): The file path, that is the folder to export the tabulated
-            outputs in .csv files (default './data/').
+        outputdir (:obj:`str`, optional): The file path, that is the folder to export
+            the tabulated outputs in .csv files (default './data/').
         
-        notallowed_symbols (:obj:`list` of `str`, optional): The list of symbols that would flag
-            the removal of the term if needed (defualt omterms.tokenizer.CHARACTERS_TO_SPLIT
+        notallowed_symbols (:obj:`list` of `str`, optional): The list of symbols 
+            that would flag the removal of the term if needed 
+            (defualt omterms.tokenizer.CHARACTERS_TO_SPLIT
             
-        nonremovable_terms (:obj:`str`, optional): File path to the list of exceptions.
+        nonremovable_terms (:obj:`str`, optional): File path to the list 
+            of exceptions.
         
-        file_standard_stopwords (:obj:`str`, optional): The file path to the standard stopward list, 
-            if desired and exists.
+        file_standard_stopwords (:obj:`str`, optional): The file path to the 
+            standard stopward list, if desired and exists.
             
-            Note: The removal would not take place if the term is a specific term or marked
-            as an exception.
+            Note: The removal would not take place if the term is a specific
+                term or marked as an exception.
         
-        file_specific_stopwords (:obj:`str`, optional): The file path to a specifix stopward list,
-            if desired and exists.
+        file_specific_stopwords (:obj:`str`, optional): The file path to a 
+            specifix stopward list, if desired and exists.
             
-            Note: The removal would not take place if the term is a specific term that is if marked as an exception.
+            Note: The removal would not take place if the term is a specific term that
+            is if marked as an exception.
         
-        regression_threshold (:obj:`float`, optional): if scoring is requested and if the input text is
-            not driven from the reference corpus then this paramter is used at training the predection model
-            for the terms that don't occure in the reference corpus (default 1.0).
+        regression_threshold (:obj:`float`, optional): if scoring is requested
+            and if the input text is not driven from the reference corpus then this 
+            paramter is used at training the predection model for the terms that 
+            don't occure in the reference corpus (default 1.0).
             
     Returns:
         (:obj:`pandas.DataFrame`, optional) The tabulated data.
@@ -217,8 +237,8 @@ def extract_terms(texts,
         
     def process(text, export=export, prefix=''):
         """
-        Given an input text it extracts, tokenizes, stems(optional) and
-            scores(optional) each extracted text.
+        Given an input text it extracts, tokenizes, stems(optional)
+        and  scores(optional) each extracted text.
             
         """
         print('Extracting the terms ...')
