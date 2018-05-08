@@ -41,7 +41,7 @@ cd omterms
 pip install .
 ```
 
-## Quick Usage
+## A quick use
 ```python
 >>> from omterms.interface import *
 >>> extract_terms("Some input X text to process less then 3 seconds.").head()
@@ -69,24 +69,22 @@ COMPLETED.
 >>> 
 
 ```
-## More on Usage
+## More on usage
 [Please see the tutorial.](https://github.com/bulentozel/omterms/blob/master/tutorial.ipynb)
 
 -------------
 
-# Keyword and Keypharse Extraction
+--------------
 
-## 1. Objective
+# Roadmap on Keyword and Keyphrase Extraction
 
-This notebook sketches the initial exercise on identifiying a weighted set of key terms using a specific corpus.
+The method outlined here aims to set-up a base line for future improvements.
 
-The method outlined here aims to set-up a base line for future improvements. See the relevant sections below.
  * It uses a statistical approach combined with standardized procedures that are widely applied in standard NLP workflows.
  * In this base line, it aims to present a work flow that can be ablied to
      * different languages
      * differrent problem domains
- * For scoring stage it relies on a domain specific corpus as a foreground corpus and a reference corpus as the background corpus
- 
+     * analysis on a single theme with limited training set
 
 ## 2. Overall Work Flow
 In short, the workflow presented on this notebook is the second stage on a workflow objective of which is being able to measure relevance of a given external input to a specific theme, issue or topic. The steps of the work flow is as follows.
@@ -150,7 +148,7 @@ where
 It should be noted that frequency counts are calculated after having applied the same tokenization and post processing such as excluding stop-words, pancuations, rare terms, etc both on the reference corpus and the specific corpus.
 
 
-### 6. Some thoughts an a conceptual approach at using the extracted keywords or phrases to predict topical relevance of a new text. 
+### 5. Some thoughts an a conceptual approach at using the extracted keywords or phrases to predict topical relevance of a new text. 
 
 Using the outcome of this technique to score arbitrary input texts against a single issue such as financial sustainability or against a set of issues such as the 10 basic human values requires a set of normalization of the raw scores and their rescaling/transformation.
 
@@ -182,7 +180,7 @@ The factors that need to be considered are:
 
 When one attempts to use scores, for instance, around the basic ten human values and one wants to construct the value system of the person, then both ranking of the scores as well as the relevant importance of each score from a number of texts from the same person should be taken into consideration.
 
-## 7. State of the art 
+## 6. State of the art 
 
 * Survey Paper: Kazi Saidul Hasan and Vincent Ng, 2014. “Automatic Keyphrase Extraction: A Survey of the State of the Art” Proceedings of the 52nd Annual Meeting of the Association for Computational Linguistics, pages 1262–1273.
 
