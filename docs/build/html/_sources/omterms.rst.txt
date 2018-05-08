@@ -1,0 +1,70 @@
+omterms package
+===============
+
+Submodules
+----------
+
+omterms.cleaner module
+----------------------
+
+.. automodule:: omterms.cleaner
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+omterms.datauis module
+----------------------
+
+.. automodule:: omterms.datauis
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+omterms.interface module
+------------------------
+
+.. automodule:: omterms.interface
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+omterms.measures module
+-----------------------
+
+.. automodule:: omterms.measures
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+omterms.stemmer module
+----------------------
+
+.. automodule:: omterms.stemmer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+omterms.tokenizer module
+------------------------
+
+.. automodule:: omterms.tokenizer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+omterms.utilities module
+------------------------
+
+.. automodule:: omterms.utilities
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: omterms
+    :members:
+    :undoc-members:
+    :show-inheritance:

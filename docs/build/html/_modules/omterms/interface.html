@@ -1,0 +1,438 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>omterms.interface &#8212; Custom Term Extraction 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for omterms.interface</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;OpenMaker term extraction application interface.</span>
+
+<span class="sd">Author: Bulent Ozel</span>
+<span class="sd">e-mail: bulent.ozel@gmail.com</span>
+
+<span class="sd">The application interface provides an encapsualtion and standardization at preparing a set of texts for</span>
+<span class="sd">further analyses. The standardized term extraction process covers tokenization, counting both raw and </span>
+<span class="sd">normalized, cleaning, stemming(optional), and scoring(optional) chioices. The tabulated output can be</span>
+<span class="sd">exported in .csv file format and/or Pandas dataframe format.</span>
+
+<span class="sd">The input text(s) can be provided in any of the following formats:</span>
+<span class="sd">- raw text</span>
+<span class="sd">- tokenized text</span>
+<span class="sd">- tokenized and counted</span>
+
+<span class="sd">In the same manner if a background courpus based scoring is desired then the reference corpus</span>
+<span class="sd">can be provided in any of the above formats. Depending on the desired actions on the input text,</span>
+<span class="sd">the output may contain not only raw and normalized term frequency counts but also stems of</span>
+<span class="sd">the terms its frequency count in the background corpus, when provided, and term&#39;s log likelihood</span>
+<span class="sd">weight wrt to its prevalance in the reference corpus.</span>
+
+<span class="sd">For deatils please see the README and tuturials that comes alongs with installation </span>
+<span class="sd">of this package.</span>
+
+<span class="sd">Attributes:</span>
+<span class="sd">    OUTPUT_FOLDER (file path): The folder to export the tabulated outputs </span>
+<span class="sd">        in .csv files.</span>
+<span class="sd">    </span>
+<span class="sd">    OUTPUT_FNAME  (file name): The default output file name where results </span>
+<span class="sd">        for multiple texts are merged and presented.</span>
+<span class="sd">        </span>
+<span class="sd">    STOPWORDS_STANDARD (file path): The location of standard stopward list,</span>
+<span class="sd">        if desired and exists.</span>
+<span class="sd">        </span>
+<span class="sd">    STOPWORDS_SPECIFIC (file path): The location of topic(s) specific stopward</span>
+<span class="sd">        list, if desired and exists. </span>
+<span class="sd">        </span>
+<span class="sd">    NOTALLOWED (:obj:`list` of `str`): The list of symbols that would flag the</span>
+<span class="sd">        removal of the term, if needed.</span>
+<span class="sd">        </span>
+<span class="sd">        Note: The removal would not take place if the term is a specific term or</span>
+<span class="sd">            marked as an exception.</span>
+<span class="sd">        </span>
+<span class="sd">    TERMS_SPECIFIC (file path): The location of exception list of terms which is</span>
+<span class="sd">        shielded from cleaning process, if needed.</span>
+<span class="sd">        </span>
+<span class="sd">    TOKENIZER_FUNC (x :obj:`str` -&gt; y: :obj:`str`): A tokenizer function.</span>
+<span class="sd">    </span>
+<span class="sd">    STEMMER_FUNC (x :obj:`str` -&gt; y: :obj:`str`): A stemmer function,</span>
+<span class="sd">        if needed</span>
+<span class="sd">    </span>
+<span class="sd">    MIN_LENGTH (:obj:`int`): The minimum allowed term length.</span>
+<span class="sd">    </span>
+<span class="sd">    MIN_FREQ (:obj:`float`): The minimum allowed frequency count for</span>
+<span class="sd">        the tabuleted outputs.</span>
+<span class="sd">    </span>
+<span class="sd">    MODEL_THRESHOLD (:obj:`int`): if scoring is requested and if the input text</span>
+<span class="sd">        is not driven from the reference corpus, then the paramter is used at training</span>
+<span class="sd">        the predection model for the terms that don&#39;t occure in the reference corpus.</span>
+
+<span class="sd">Todo:</span>
+<span class="sd">    * Re-implement the module as a memoized object either via a class or</span>
+<span class="sd">        a via wrapper function.</span>
+<span class="sd">    * Add a functionality where the configuration paramters can be loaded</span>
+<span class="sd">        from a JSON file.</span>
+<span class="sd">    * Make tokenization an optional process, for the cases where the input</span>
+<span class="sd">        is already provided in tokens.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="kn">from</span> <span class="nn">omterms</span> <span class="k">import</span> <span class="n">tokenizer</span>
+<span class="kn">from</span> <span class="nn">omterms.datauis</span> <span class="k">import</span> <span class="n">WikiArticles</span><span class="p">,</span> <span class="n">Corpus</span>
+<span class="kn">from</span> <span class="nn">omterms.cleaner</span> <span class="k">import</span> <span class="n">TextCleaner</span>
+<span class="kn">from</span> <span class="nn">omterms.measures</span> <span class="k">import</span> <span class="n">Scoring</span>
+<span class="kn">from</span> <span class="nn">omterms.utilities</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">omterms.stemmer</span> <span class="k">import</span> <span class="n">porter</span>
+
+<span class="n">OUTPUT_FOLDER</span> <span class="o">=</span> <span class="s2">&quot;./output/&quot;</span>
+<span class="n">OUTPUT_FNAME</span> <span class="o">=</span> <span class="s2">&quot;omterms.csv&quot;</span>
+
+<span class="n">STOPWORDS_STANDARD</span> <span class="o">=</span> <span class="s2">&quot;./data/stopwords_standard.txt&quot;</span>
+<span class="n">STOPWORDS_SPECIFIC</span> <span class="o">=</span> <span class="s2">&quot;./data/stopwords_openmaker.txt&quot;</span>
+<span class="n">NOTALLOWED</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">CHARACTERS_TO_SPLIT</span>
+<span class="n">TERMS_SPECIFIC</span> <span class="o">=</span> <span class="s2">&quot;./data/specifics_openmaker.txt&quot;</span>
+
+<span class="n">TOKENIZER_FUNC</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">tokenize_strip_non_words</span>
+<span class="n">STEMMER_FUNC</span> <span class="o">=</span> <span class="n">porter</span>
+
+<span class="n">MIN_LENGTH</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">MIN_FREQ</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">MODEL_THRESHOLD</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+
+<div class="viewcode-block" id="extract_terms"><a class="viewcode-back" href="../../omterms.html#omterms.interface.extract_terms">[docs]</a><span class="k">def</span> <span class="nf">extract_terms</span><span class="p">(</span><span class="n">texts</span><span class="p">,</span>
+                  <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">TOKENIZER_FUNC</span><span class="p">,</span>
+                  <span class="n">merge</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                  <span class="n">min_termlength</span> <span class="o">=</span> <span class="n">MIN_LENGTH</span><span class="p">,</span>
+                  <span class="n">min_tf</span> <span class="o">=</span> <span class="n">MIN_FREQ</span><span class="p">,</span>
+                  <span class="n">topics</span> <span class="o">=</span> <span class="p">[],</span>
+                  <span class="n">extra_process</span> <span class="o">=</span> <span class="p">[],</span>
+                  <span class="n">stemmer</span> <span class="o">=</span> <span class="n">STEMMER_FUNC</span><span class="p">,</span>
+                  <span class="n">refcorpus</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                  <span class="n">export</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                  <span class="n">basefname</span> <span class="o">=</span> <span class="n">OUTPUT_FNAME</span><span class="p">,</span>
+                  <span class="n">outputdir</span> <span class="o">=</span> <span class="n">OUTPUT_FOLDER</span><span class="p">,</span> 
+                  <span class="n">notallowed_symbols</span> <span class="o">=</span> <span class="n">NOTALLOWED</span><span class="p">,</span>
+                  <span class="n">nonremovable_terms</span> <span class="o">=</span> <span class="n">TERMS_SPECIFIC</span><span class="p">,</span>
+                  <span class="n">file_standard_stopwords</span> <span class="o">=</span> <span class="n">STOPWORDS_STANDARD</span><span class="p">,</span>
+                  <span class="n">file_specific_sopwords</span> <span class="o">=</span> <span class="n">STOPWORDS_SPECIFIC</span><span class="p">,</span>
+                  <span class="n">regression_threshold</span> <span class="o">=</span> <span class="n">MODEL_THRESHOLD</span>
+                  <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Term extraction modules main driver function.</span>
+<span class="sd"> </span>
+<span class="sd">    Args:</span>
+<span class="sd">        texts (:obj:`str` or :obj:`dict` of `str` or  :obj:`omterms.WikiArticles`):</span>
+<span class="sd">        The input text can be any of the following:</span>
+<span class="sd">                - a string,</span>
+<span class="sd">                - or a dictionary of strings where the key denotes the topic </span>
+<span class="sd">                    or any desired label/annotation regarding the text,</span>
+<span class="sd">                - or a special data holder which contains labeled text scraped</span>
+<span class="sd">                    from Wikipedia articles.</span>
+<span class="sd">                </span>
+<span class="sd">        tokenizer (x :obj:`str` -&gt; y: :obj:`str`): The tokenizer,</span>
+<span class="sd">            (defualt omterms.tokenizer.tokenize_strip_non_words).</span>
+<span class="sd">                </span>
+<span class="sd">        merge (:obj:`bool`): When a collection of text is provided via a dict or</span>
+<span class="sd">            WikiArticles, the parmater detertmines whether they should be </span>
+<span class="sd">            conactinated for the term extraction (default False).</span>
+<span class="sd">             </span>
+<span class="sd">        min_termlength (:obj:`int`): The minimum allowed term length (default 1).</span>
+<span class="sd">        </span>
+<span class="sd">        min_tf (:obj:`int`): The minimum allowed frequency count for the tabuleted</span>
+<span class="sd">            outputs (default 4).</span>
+<span class="sd">                </span>
+<span class="sd">        topics (:obj:`list` of `str`, optional): The list of topics from the input</span>
+<span class="sd">            texts to be considered (default Empty).</span>
+<span class="sd">            </span>
+<span class="sd">            If topic list is not provided and the merge is not requested but the</span>
+<span class="sd">            input text is given either via dict or via the WikiArticles data holder,</span>
+<span class="sd">            then the topic list will be driven from the input collection automatically.</span>
+<span class="sd">       </span>
+<span class="sd">        extra_process (:obj:`list` of `str`, optional): Whether stemming and/or scoring</span>
+<span class="sd">            is requested (default Empty).</span>
+<span class="sd">            - &#39;stem&#39; is used/needed to flag stemming.</span>
+<span class="sd">            - &#39;compare&#39; is used/needed to scoring texts against the designated</span>
+<span class="sd">                reference corpus. </span>
+<span class="sd">       </span>
+<span class="sd">        stemmer (x :obj:`str` -&gt; y: :obj:`str`, optional): A stemmer function,</span>
+<span class="sd">            if needed (default omterms.stemmer.porter).</span>
+<span class="sd">       </span>
+<span class="sd">        refcorpus (:obj:`str`</span>
+<span class="sd">                   or :obj:`list` of `str`</span>
+<span class="sd">                   or :obj:`dict` of `str`</span>
+<span class="sd">                   or :obj:`omterms.WikiArticles`, optional): The reference corpus</span>
+<span class="sd">                       (Default None)</span>
+<span class="sd">           The refcorpus can beny of the following:</span>
+<span class="sd">                - None: if it is none yet the a scoring process is requested then</span>
+<span class="sd">                    NLTK&#39;s Brown corpus is loaded.</span>
+<span class="sd">                - a string: A plain text.</span>
+<span class="sd">                - list of words: List of words or tokens.</span>
+<span class="sd">                - or a dictionary of strings where the text from the text will</span>
+<span class="sd">                    be unified for the reference corpus.</span>
+<span class="sd">                - or a special data holder which contains labeled text scraped from</span>
+<span class="sd">                    Wikipedia articles, where all the texts from the collection will </span>
+<span class="sd">                    be combined to be used as the reference background corpus.</span>
+<span class="sd">    </span>
+<span class="sd">        export (:obj:`bool`, optional): Whether the resulting tables should be</span>
+<span class="sd">            exported (default False).</span>
+<span class="sd">        </span>
+<span class="sd">        basefname (:obj:`str`, optional): The output table name/prefix. Is effective</span>
+<span class="sd">            only when export is requested (default &#39;omsterms.csv&#39;).</span>
+<span class="sd">        </span>
+<span class="sd">        outputdir (:obj:`str`, optional): The file path, that is the folder to export</span>
+<span class="sd">            the tabulated outputs in .csv files (default &#39;./data/&#39;).</span>
+<span class="sd">        </span>
+<span class="sd">        notallowed_symbols (:obj:`list` of `str`, optional): The list of symbols </span>
+<span class="sd">            that would flag the removal of the term if needed </span>
+<span class="sd">            (defualt omterms.tokenizer.CHARACTERS_TO_SPLIT</span>
+<span class="sd">            </span>
+<span class="sd">        nonremovable_terms (:obj:`str`, optional): File path to the list </span>
+<span class="sd">            of exceptions.</span>
+<span class="sd">        </span>
+<span class="sd">        file_standard_stopwords (:obj:`str`, optional): The file path to the </span>
+<span class="sd">            standard stopward list, if desired and exists.</span>
+<span class="sd">            </span>
+<span class="sd">            Note: The removal would not take place if the term is a specific</span>
+<span class="sd">                term or marked as an exception.</span>
+<span class="sd">        </span>
+<span class="sd">        file_specific_stopwords (:obj:`str`, optional): The file path to a </span>
+<span class="sd">            specifix stopward list, if desired and exists.</span>
+<span class="sd">            </span>
+<span class="sd">            Note: The removal would not take place if the term is a specific term that</span>
+<span class="sd">            is if marked as an exception.</span>
+<span class="sd">        </span>
+<span class="sd">        regression_threshold (:obj:`float`, optional): if scoring is requested</span>
+<span class="sd">            and if the input text is not driven from the reference corpus then this </span>
+<span class="sd">            paramter is used at training the predection model for the terms that </span>
+<span class="sd">            don&#39;t occure in the reference corpus (default 1.0).</span>
+<span class="sd">            </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        (:obj:`pandas.DataFrame`, optional) The tabulated data.</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">get_text</span><span class="p">(</span><span class="n">collection</span> <span class="o">=</span> <span class="n">texts</span><span class="p">,</span> <span class="n">topic</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;&quot;</span>
+<span class="sd">        Retreives the text from the collection.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">collection</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span> <span class="k">return</span> <span class="n">collection</span>
+        <span class="k">if</span> <span class="n">topic</span><span class="p">:</span> 
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">collection</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">collection</span><span class="p">[</span><span class="n">topic</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">WikiArticles</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">topic</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span> <span class="n">tid</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">get_theme_id</span><span class="p">(</span><span class="n">topic</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">collection</span><span class="o">.</span><span class="n">collate</span><span class="p">(</span><span class="n">by_theme_id</span> <span class="o">=</span> <span class="n">tid</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">collection</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">collection</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">WikiArticles</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">collection</span><span class="o">.</span><span class="n">collate</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span>
+        
+    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">export</span><span class="o">=</span><span class="n">export</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given an input text it extracts, tokenizes, stems(optional)</span>
+<span class="sd">        and  scores(optional) each extracted text.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Extracting the terms ...&#39;</span><span class="p">)</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="n">run_tokenizing_process</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span>
+        <span class="n">tf_tokens</span><span class="o">=</span> <span class="n">run_cleaning_process</span><span class="p">(</span><span class="n">Cleaner</span><span class="p">,</span> <span class="n">tokens</span><span class="p">,</span>
+                                        <span class="n">minL</span> <span class="o">=</span> <span class="n">min_termlength</span><span class="p">,</span>
+                                        <span class="n">minF</span> <span class="o">=</span> <span class="n">min_tf</span><span class="p">,</span>
+                                        <span class="n">notallowed</span> <span class="o">=</span> <span class="n">notallowed_symbols</span><span class="p">,</span>
+                                        <span class="n">logging</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">thecorpus</span> <span class="o">=</span> <span class="n">Corpus</span><span class="p">(</span><span class="n">tf_tokens</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;stem&#39;</span> <span class="ow">in</span> <span class="n">extra_process</span><span class="p">:</span>
+            <span class="n">thecorpus</span> <span class="o">=</span> <span class="n">run_stemming_process</span><span class="p">(</span><span class="n">thecorpus</span><span class="p">,</span> <span class="n">stemmer</span><span class="p">)</span>      
+        <span class="k">if</span> <span class="s1">&#39;compare&#39;</span> <span class="ow">in</span> <span class="n">extra_process</span> <span class="ow">and</span> <span class="n">ref_corpus</span><span class="p">:</span>
+            <span class="n">myScoring</span> <span class="o">=</span> <span class="n">Scoring</span><span class="p">(</span><span class="n">thecorpus</span><span class="p">,</span><span class="n">ref_corpus</span><span class="p">,</span><span class="n">model_threshold</span> <span class="o">=</span> <span class="n">regression_threshold</span><span class="p">)</span>
+            <span class="n">thecorpus</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">myScoring</span><span class="o">.</span><span class="n">sCorpus</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;COMPLETED.&quot;</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">thecorpus</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">export</span><span class="p">:</span> <span class="n">export_as_csv</span><span class="p">(</span><span class="n">df</span><span class="p">,</span><span class="n">prefix</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span>
+    
+    <span class="k">def</span> <span class="nf">export_as_csv</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Writes to the csv file.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">prefix</span><span class="p">:</span>
+            <span class="n">csvfile_name</span> <span class="o">=</span> <span class="n">outputdir</span> <span class="o">+</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">basefname</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">csvfile_name</span> <span class="o">=</span> <span class="n">outputdir</span> <span class="o">+</span> <span class="n">basefname</span>
+            
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">csvfile_name</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">csvfile_name</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Results are exported to file: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">csvfile_name</span><span class="p">))</span>
+    
+        
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Configuring the text cleaner ...&#39;</span><span class="p">)</span>
+    <span class="n">Cleaner</span> <span class="o">=</span> <span class="n">TextCleaner</span><span class="p">()</span>
+    <span class="n">Cleaner</span><span class="o">.</span><span class="n">load_stopwords</span><span class="p">(</span><span class="n">file_standard_stopwords</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">file_specific_sopwords</span><span class="p">:</span>
+        <span class="n">Cleaner</span><span class="o">.</span><span class="n">extend_stopwords</span><span class="p">(</span><span class="n">file_specific_sopwords</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nonremovable_terms</span><span class="p">:</span>
+        <span class="n">nonremovable_terms</span> <span class="o">=</span> <span class="n">load_from_file</span><span class="p">(</span><span class="n">nonremovable_terms</span><span class="p">)</span>
+        <span class="n">Cleaner</span><span class="o">.</span><span class="n">set_exceptions</span><span class="p">(</span><span class="n">nonremovable_terms</span><span class="p">)</span>
+    
+    <span class="c1"># Reference corpus if exists:</span>
+    <span class="k">if</span> <span class="s1">&#39;compare&#39;</span> <span class="ow">in</span> <span class="n">extra_process</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Preparing the reference corpus ::&gt;&#39;</span><span class="p">)</span>
+        <span class="n">ref_corpus</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">ref_tokens</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">refcorpus</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Comparions/Scoring is requested but no reference corpus text or tokens is provided.&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading nltk.corpus.brown ...&#39;</span><span class="p">)</span>
+            <span class="kn">from</span> <span class="nn">nltk.corpus</span> <span class="k">import</span> <span class="n">brown</span>
+            <span class="n">ref_tokens</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">brown</span><span class="o">.</span><span class="n">words</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">refcorpus</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;An untokenized reference corpus is identified.&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Tokenizing the reference corpus ...&#39;</span><span class="p">)</span>
+            <span class="n">ref_tokens</span> <span class="o">=</span> <span class="n">run_tokenizing_process</span><span class="p">(</span><span class="n">refcorpus</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">refcorpus</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="n">ref_tokens</span> <span class="o">=</span> <span class="n">refcorpus</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">refcorpus</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">get_text</span><span class="p">(</span><span class="n">refcorpus</span><span class="p">)</span>
+            <span class="n">ref_tokens</span> <span class="o">=</span> <span class="n">run_tokenizing_process</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">refcorpus</span><span class="p">,</span> <span class="n">WikiArticles</span><span class="p">):</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">refcorpus</span><span class="o">.</span><span class="n">collate</span><span class="p">()</span>
+            <span class="n">ref_tokens</span> <span class="o">=</span> <span class="n">run_tokenizing_process</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;A non valid corpus format dedected :</span><span class="si">{}</span><span class="s1">. Comparisons will be skipped.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">refcorpus</span><span class="p">)))</span>
+            <span class="n">extraprocs</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;compare&#39;</span><span class="p">)</span>
+            
+        <span class="c1"># Clean and standardize the reference corpus if identified,    </span>
+        <span class="k">if</span> <span class="n">ref_tokens</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Cleaning the reference corpus ...&#39;</span><span class="p">)</span>
+            <span class="n">tf_ref_tokens</span><span class="o">=</span> <span class="n">run_cleaning_process</span><span class="p">(</span><span class="n">Cleaner</span><span class="p">,</span>
+                                                <span class="n">ref_tokens</span><span class="p">,</span>
+                                                <span class="n">minL</span> <span class="o">=</span> <span class="n">min_termlength</span><span class="p">,</span>
+                                                <span class="n">minF</span> <span class="o">=</span> <span class="n">min_tf</span><span class="p">,</span>
+                                                <span class="n">logging</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                                                <span class="n">notallowed</span> <span class="o">=</span> <span class="n">notallowed_symbols</span><span class="p">)</span>
+            <span class="n">ref_corpus</span> <span class="o">=</span> <span class="n">Corpus</span><span class="p">(</span><span class="n">tf_ref_tokens</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Stemming the word in the reference corpus ...&#39;</span><span class="p">)</span>
+            <span class="n">ref_corpus</span> <span class="o">=</span> <span class="n">run_stemming_process</span><span class="p">(</span><span class="n">ref_corpus</span><span class="p">,</span> <span class="n">stemmer</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done: Reference corpus process.&#39;</span><span class="p">)</span>
+
+    
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;A single text is provided.&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">process</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">topics</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">merge</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Term extraction on the combined text from collection is requested.&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">process</span><span class="p">(</span><span class="n">get_text</span><span class="p">(</span><span class="n">texts</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">texts</span><span class="p">,</span> <span class="n">WikiArticles</span><span class="p">):</span>
+            <span class="n">topics</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">texts</span><span class="o">.</span><span class="n">list_themes</span><span class="p">()]</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
+            <span class="n">topics</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">texts</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Multiple texts without topic labels are present.&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Term extraction will process the combined texts.&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">process</span><span class="p">(</span><span class="n">get_text</span><span class="p">(</span><span class="n">texts</span><span class="p">))</span>
+    
+    <span class="n">dfs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Processing each topic ::&gt;&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">topic</span> <span class="ow">in</span> <span class="n">topics</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Topic = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">topic</span><span class="p">))</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">get_text</span><span class="p">(</span><span class="n">texts</span><span class="p">,</span> <span class="n">topic</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span> <span class="k">continue</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">prefix</span> <span class="o">=</span> <span class="n">topic</span><span class="p">)</span>
+        <span class="n">dfs</span><span class="p">[</span><span class="n">topic</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span>
+    <span class="n">dfsl</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">t</span><span class="p">,</span><span class="n">df</span> <span class="ow">in</span> <span class="n">dfs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">dfsl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pandas_rename_cols</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">prefix</span> <span class="o">=</span> <span class="n">t</span><span class="p">))</span>
+    <span class="n">DF</span> <span class="o">=</span> <span class="n">pandas_merge_dfs</span><span class="p">(</span><span class="n">dfsl</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">export</span><span class="p">:</span> <span class="n">export_as_csv</span><span class="p">(</span><span class="n">DF</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">DF</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Bulent Ozel.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

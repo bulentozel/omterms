@@ -1,0 +1,9 @@
+name: omterms
+
+dependencies:
+- nltk
+- numpy
+- pandas
+- matplotlib
+- scikit-learn
+- scipy

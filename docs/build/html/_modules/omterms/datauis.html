@@ -1,0 +1,656 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>omterms.datauis &#8212; Custom Term Extraction 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for omterms.datauis</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;OpenMaker textaul data holders and interfaces.</span>
+
+<span class="sd">Author: Bulent Ozel</span>
+<span class="sd">e-mail: bulent.ozel@gmail.com</span>
+
+<span class="sd">The module contains a set of tools used to hold and process text corpuses and collections.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">nltk</span> <span class="k">import</span> <span class="n">FreqDist</span>
+<span class="kn">import</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<div class="viewcode-block" id="WikiArticles"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.WikiArticles">[docs]</a><span class="k">class</span> <span class="nc">WikiArticles</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The object contains a set of tools to process the set of </span>
+<span class="sd">        documents collected and cleaned by the wiki crawler.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        collection_json (:obj:`str`): This is a filename to the scraped data.</span>
+<span class="sd">            Each JSON document is expected to have following fields:</span>
+<span class="sd">            - theme: Topic identifier, ex: Sustainability</span>
+<span class="sd">            - theme.id: A unique category identifier</span>
+<span class="sd">            - document.id: A unique document id</span>
+<span class="sd">            - title: Title of the document</span>
+<span class="sd">            - url: Full URL of the document</span>
+<span class="sd">            - depth: The link distance from the seed docuement. The seed documents depth is 0.</span>
+<span class="sd">            - text: The string data scraped from the page without tags. Pancuations are not </span>
+<span class="sd">                required but terms are expected to be delineated by white space. </span>
+<span class="sd">        collection (:obj:`list` of :obj:`dict`): Loaded json file into native list of dictionaries.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The class constructor.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            collection (:obj:`str`): A filename to a previously scraped data.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collection_json</span> <span class="o">=</span> <span class="n">collection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_corpus</span><span class="p">()</span>
+        
+        
+<div class="viewcode-block" id="WikiArticles.load_corpus"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.WikiArticles.load_corpus">[docs]</a>    <span class="k">def</span> <span class="nf">load_corpus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method loads imports json file into a native collection.</span>
+<span class="sd">          </span>
+<span class="sd">        Args:</span>
+<span class="sd">            collection (:obj:`str`): A filename to a previously scraped data.</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`bool`): True.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+            
+        <span class="k">if</span> <span class="n">collection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">collection_json</span> <span class="o">=</span> <span class="n">collection</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection_json</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">_text</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">_text</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Number of documents in the corpus: </span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+    
+    
+<div class="viewcode-block" id="WikiArticles.get_document_fields"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.WikiArticles.get_document_fields">[docs]</a>    <span class="k">def</span> <span class="nf">get_document_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method lists the fields of each json field of its collection.</span>
+<span class="sd">          </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None  </span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`dict_keys`): List of keys.</span>
+<span class="sd">            None: When the collection is empty.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> must have been a non-empty list of dict objects&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span> <span class="n">msg</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="p">):</span> <span class="k">return</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span></div>
+    
+    
+<div class="viewcode-block" id="WikiArticles.list_themes"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.WikiArticles.list_themes">[docs]</a>    <span class="k">def</span> <span class="nf">list_themes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method lists the summary of themes/topics in the collection.</span>
+<span class="sd">          </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None  </span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`list` of :obj:`dict`): List of dictionry where keys are</span>
+<span class="sd">                - name: theme&#39;s textual descriptor</span>
+<span class="sd">                - id: theme&#39;s unique id</span>
+<span class="sd">                - count: number of articles under the theme.   </span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">themes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">article</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="p">:</span>
+            <span class="n">theme_id</span> <span class="o">=</span> <span class="n">article</span><span class="p">[</span><span class="s1">&#39;theme.id&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">theme_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">themes</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">themes</span><span class="p">[</span><span class="n">theme_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">article</span><span class="p">[</span><span class="s1">&#39;theme&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">t</span><span class="p">,</span><span class="n">c</span> <span class="o">=</span> <span class="n">themes</span><span class="p">[</span><span class="n">theme_id</span><span class="p">]</span>
+                <span class="n">c</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">themes</span><span class="p">[</span><span class="n">theme_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+        <span class="n">themes</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span><span class="n">k</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">:</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;num_of_articles&#39;</span><span class="p">:</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]}</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">themes</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="n">themes</span></div>
+
+    
+<div class="viewcode-block" id="WikiArticles.get_theme_title"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.WikiArticles.get_theme_title">[docs]</a>    <span class="k">def</span> <span class="nf">get_theme_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theme_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method returns topic name.</span>
+<span class="sd">          </span>
+<span class="sd">        Args:</span>
+<span class="sd">            theme_id (:obj:`int`): The unique theme id. </span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            ( :obj:`str`): Topic name.  </span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">article</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">article</span><span class="p">[</span><span class="s1">&#39;theme.id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">theme_id</span><span class="p">:</span>
+                <span class="n">title</span> <span class="o">=</span> <span class="n">article</span><span class="p">[</span><span class="s1">&#39;theme&#39;</span><span class="p">]</span>
+                <span class="k">break</span>
+        <span class="k">return</span> <span class="n">title</span></div>
+
+<div class="viewcode-block" id="WikiArticles.get_theme_id"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.WikiArticles.get_theme_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_theme_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theme_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method returns topic id of the first match theme name.</span>
+<span class="sd">          </span>
+<span class="sd">        Args:</span>
+<span class="sd">            theme_name (:obj:`str`): The theme or topic name. </span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            ( :obj:`int`): A unique theme identifier.  </span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">theme_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">article</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">article</span><span class="p">[</span><span class="s1">&#39;theme&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">theme_name</span><span class="p">:</span>
+                <span class="n">theme_id</span> <span class="o">=</span> <span class="n">article</span><span class="p">[</span><span class="s1">&#39;theme.id&#39;</span><span class="p">]</span>
+                <span class="k">break</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">theme_id</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="WikiArticles.display_documents_list"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.WikiArticles.display_documents_list">[docs]</a>    <span class="k">def</span> <span class="nf">display_documents_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stdout</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;List the articles meta data and crawling information on them.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            tid (:obj:`int`, optional): Used if documents info under a specific theme is desired </span>
+<span class="sd">                otherwise a summary of whole set is returned or displayed (default None).</span>
+<span class="sd">            stdout (:obj:`bool`, optional): Whether the info is to be displayed/printed</span>
+<span class="sd">                to standard io (default True).</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            ( :obj:`list`): A summary list of documents in the collection. </span>
+<span class="sd">            </span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">stdout</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;document.id :: theme.id :: theme :: depth :: url&#39;</span><span class="p">)</span>
+        <span class="n">articles</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">articles</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;text&#39;</span> <span class="ow">in</span> <span class="n">a</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">a</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">tid</span><span class="p">:</span>
+            <span class="n">articles</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">articles</span> <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="s1">&#39;theme.id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">tid</span><span class="p">]</span>   
+        <span class="n">articles</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">articles</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;theme.id&#39;</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;depth&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">stdout</span><span class="p">:</span> <span class="k">return</span> <span class="n">articles</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">articles</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s1">&#39;document.id&#39;</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="s1">&#39;theme.id&#39;</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="s1">&#39;theme&#39;</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="s1">&#39;depth&#39;</span><span class="p">],</span><span class="n">a</span><span class="p">[</span><span class="s1">&#39;url&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">articles</span></div>
+    
+
+<div class="viewcode-block" id="WikiArticles.prune"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.WikiArticles.prune">[docs]</a>    <span class="k">def</span> <span class="nf">prune</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">themes_to_keep</span> <span class="o">=</span> <span class="p">[],</span> <span class="n">docs_to_drop</span> <span class="o">=</span> <span class="p">[],</span> <span class="n">istodrop</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method is used to filter out documents from the set.</span>
+<span class="sd">            The order of prunning is as follows:</span>
+<span class="sd">            - when a none empty list is provide all the documents not belonging themes to be kept</span>
+<span class="sd">                are prunned entirely. Note that when initial list is empty it doesn&#39;t have an effect.</span>
+<span class="sd">            - of remaing documents those appear in docs_to_drop are prunned</span>
+<span class="sd">            - of the remaing docs those produce a True at a call on the predicate function are dropped.</span>
+<span class="sd">            </span>
+<span class="sd">            The function can be repeatedly called until a desired level of prunning is achieved.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            themes_to_keep (:obj:`list` of :obj:`int`, optional): The list of theme ids to be kept (default Empty).</span>
+<span class="sd">            docs_to_drop (:obj:`list`, optional): The list of doc ids to be dropt (default Empty). </span>
+<span class="sd">            f (x :obj:`dict_item` -&gt; :obj:`bool`, optional): A predicate function (default lambda x:False)</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`bool`): True. </span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">themes_to_keep</span><span class="p">:</span>
+            <span class="n">themes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">themes_to_keep</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s1">&#39;theme.id&#39;</span><span class="p">])</span> <span class="ow">in</span> <span class="n">themes</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="s1">&#39;document.id&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">docs_to_drop</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">istodrop</span><span class="p">(</span><span class="n">a</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="WikiArticles.collate"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.WikiArticles.collate">[docs]</a>    <span class="k">def</span> <span class="nf">collate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">by_theme_id</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">by_doc_ids</span> <span class="o">=</span> <span class="p">[],</span> <span class="n">marker</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method collects the desired set of documents concatenates them creating a unified document.</span>
+<span class="sd">            The order of merge is as follows:</span>
+<span class="sd">            - When neither list of theme nor doc ids is provided, it collates entire text.</span>
+<span class="sd">            - If a theme is given then all the documents under that theme are to be joined first.</span>
+<span class="sd">            - When a list of docs is given, only those in the list are kept.</span>
+<span class="sd">            Note that if both theme id and doc ids provided, precedence is on themes.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            by_theme_id (:obj:`int`, optional): The theme id of the docs to be collated.</span>
+<span class="sd">            by_doc_ids (:obj:`list` of :obj:`int`, optional): The list of doc ids to be collated (default Empty). </span>
+<span class="sd">            marker (:obj:`str`, optional): A delimiter (default newline)</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`str`): The collated text. </span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">docs</span> <span class="o">=</span>  <span class="bp">self</span><span class="o">.</span><span class="n">collection</span>
+        <span class="k">if</span> <span class="n">by_theme_id</span><span class="p">:</span>
+            <span class="n">docs</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">docs</span> <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;theme.id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">by_theme_id</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">by_doc_ids</span><span class="p">:</span>
+            <span class="n">docs</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">docs</span> <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;document.id&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">by_doc_ids</span><span class="p">]</span>
+        <span class="n">texts</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">]</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">marker</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">text</span></div></div>
+ 
+<div class="viewcode-block" id="Corpus"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus">[docs]</a><span class="k">class</span> <span class="nc">Corpus</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A generic class to be used for foreground or background corpuses.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        tf_dist: (:obj:`nltk.FreqDist`): An NLTK container for tokenized and cleaned</span>
+<span class="sd">            terms in the corpus.</span>
+<span class="sd">        stemmer (x :obj:`str` -&gt; y: :obj:`str`): A stemmer function.</span>
+<span class="sd">        stems (:obj:`dict`): A dictionary of terms and their stems</span>
+<span class="sd">        labels (:obj:`dict`): Term level labels.</span>
+<span class="sd">        scores (:obj:`dict`): A dictionary of terms and their corpus sepcificity scores</span>
+<span class="sd">            as of a reference corpus</span>
+<span class="sd">        ref (:obj:`dict`): A dictionary of terms that holds normalized occurance frequency of</span>
+<span class="sd">            the term at a reference corpus.</span>
+<span class="sd">        sepficifs (:obj:`set`): A set of terms appointed/associated with the corpus externally.        </span>
+<span class="sd">        To be implemented:</span>
+<span class="sd">            texts_raw (:obj:`json`): A JSON collection of raw texts of the corpus.</span>
+<span class="sd">        </span>
+<span class="sd">            texts_clean (:obj:`json`): A JSON collection of cleaned/processed</span>
+<span class="sd">            texts of the corpus.</span>
+<span class="sd">        </span>
+<span class="sd">            tf_idf (:obj:`json`): Tf-Idf analyses of the corpus (to be implemented).</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tf_dist</span><span class="p">,</span> <span class="n">stemmer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The class constructor.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tf_dist (:obj:`nltk.FreqDist`): An NLTK container for tokenized and cleaned</span>
+<span class="sd">            terms in the corpus.</span>
+<span class="sd">            stemmer (x :obj:`str` -&gt; y: :obj:`str`): A stemmer function (default None)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span> <span class="o">=</span> <span class="n">tf_dist</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stemmer</span> <span class="o">=</span> <span class="n">stemmer</span> <span class="k">if</span> <span class="n">stemmer</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stems</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scores</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">specifics</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        
+
+<div class="viewcode-block" id="Corpus.get_top_frequents"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.get_top_frequents">[docs]</a>    <span class="k">def</span> <span class="nf">get_top_frequents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="mi">42</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method identifies and returns top frequent terms.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            top (int): Size of the short list (default 42).</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`list` of :obj:`tuple` of :obj:`str` and :obj:`int`): Returns the frequency dist</span>
+<span class="sd">                for top terms as list of tuples of term and frequency pairs.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">most_common</span><span class="p">(</span><span class="n">top</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="Corpus.get_least_frequents"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.get_least_frequents">[docs]</a>    <span class="k">def</span> <span class="nf">get_least_frequents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="mi">42</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method identifies and returns least frequent terms.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            bottom (int): Size of the short list (default 42).</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`list` of :obj:`tuple` of :obj:`str` and :obj:`int`): Returns the frequency dist</span>
+<span class="sd">                for the least frequent terms as list of tuples of term and frequency pairs.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_count_uniques</span><span class="p">()</span>
+        <span class="n">slice_from</span> <span class="o">=</span> <span class="n">_n</span> <span class="o">-</span> <span class="n">bottom</span> <span class="k">if</span> <span class="n">_n</span> <span class="o">&gt;</span> <span class="n">bottom</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">most_common</span><span class="p">(</span><span class="n">_n</span><span class="p">)[</span><span class="n">slice_from</span><span class="p">:]</span></div>
+    
+<div class="viewcode-block" id="Corpus.get_count_uniques"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.get_count_uniques">[docs]</a>    <span class="k">def</span> <span class="nf">get_count_uniques</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method identifies and returns top frequent terms.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`int`): Returns an integer.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">B</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Corpus.get_size"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.get_size">[docs]</a>    <span class="k">def</span> <span class="nf">get_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The returns the size of the corpus in terms of number of terms it has.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`int`): Returns an integer. It is summation of raw frequency counts.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">N</span><span class="p">()</span></div>
+    
+<div class="viewcode-block" id="Corpus.union"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.union">[docs]</a>    <span class="k">def</span> <span class="nf">union</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span>
+              <span class="n">as_corpus</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+              <span class="n">stats</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method identifies and returns the union of two corpora.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            other (:obj:`Corpus`): An instance of this Class object.</span>
+<span class="sd">            as_corpus (bool): When True it returns a new Corpus (default False).</span>
+<span class="sd">            stats (bool): When True and as_corpus is false returns the frequency </span>
+<span class="sd">                count of the union.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`list` of :obj:`str`): If as_corpus is False and stats is False </span>
+<span class="sd">                it returns the list of union of terms in both cases.</span>
+<span class="sd">            (:obj:`list` of :obj:`tuple` of :obj:`str` and :obj:`int`): Returns the frequency dist</span>
+<span class="sd">                for the union terms, ff as_corpus is False and stats is True. </span>
+<span class="sd">            (:obj:`Corpus`): In all other cases it returns a nrew Corpus class for the intersection.</span>
+<span class="sd">                Frequencies are the minimum of the two occurances.</span>
+<span class="sd">        </span>
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; Corpus(FreqDist(&#39;abbbc&#39;)).union(Corpus(FreqDist(&#39;bccd&#39;)), stats = True)</span>
+<span class="sd">            [(&#39;a&#39;, 1), (&#39;b&#39;, 3), (&#39;c&#39;, 2), (&#39;d&#39;, 1)]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Union</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span> <span class="o">|</span> <span class="n">other</span><span class="o">.</span><span class="n">tf_dist</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">as_corpus</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">stats</span><span class="p">:</span> <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">Union</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">as_corpus</span> <span class="ow">and</span> <span class="n">stats</span><span class="p">:</span> <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">Union</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">Corpus</span><span class="p">(</span><span class="n">Union</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="Corpus.intersection"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.intersection">[docs]</a>    <span class="k">def</span> <span class="nf">intersection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span>
+                     <span class="n">as_corpus</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                     <span class="n">stats</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method identifies and returns the intersection of two corpora.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            other (:obj:`Corpus`): An instance of this Class object.</span>
+<span class="sd">            as_corpus (bool): When True it returns a new Corpus (default False).</span>
+<span class="sd">            stats (bool): When True and as_corpus is false returns the frequency </span>
+<span class="sd">                count of the intersections.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`list` of :obj:`str`): If as_corpus is False and stats is False </span>
+<span class="sd">                it returns the list of joint terms.</span>
+<span class="sd">            (:obj:`list` of :obj:`tuple` of :obj:`str` and :obj:`int`): Returns the frequency dist</span>
+<span class="sd">                for the joint terms, if as_corpus is False and stats is True. </span>
+<span class="sd">            (:obj:`Corpus`): In all other cases it returns a nrew Corpus class for the intersection.</span>
+<span class="sd">                Frequencies are the minimum of the two occurances.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Common</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span> <span class="o">&amp;</span> <span class="n">other</span><span class="o">.</span><span class="n">tf_dist</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">as_corpus</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">stats</span><span class="p">:</span> <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">Common</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">as_corpus</span> <span class="ow">and</span> <span class="n">stats</span><span class="p">:</span> <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">Common</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">Corpus</span><span class="p">(</span><span class="n">Common</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="Corpus.difference"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.difference">[docs]</a>    <span class="k">def</span> <span class="nf">difference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span>
+              <span class="n">as_corpus</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+              <span class="n">stats</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method identifies and returns the difference of the self from the other.</span>
+<span class="sd">        </span>
+<span class="sd">        Note:</span>
+<span class="sd">            Implementation needs style and refactoring.</span>
+<span class="sd">            </span>
+<span class="sd">        Args:</span>
+<span class="sd">            other (:obj:`Corpus`): An instance of this Corpus Class object.</span>
+<span class="sd">            as_corpus (bool): When True it returns a new Corpus (default False).</span>
+<span class="sd">            stats (bool): When True and as_corpus is false returns the frequency </span>
+<span class="sd">                count of the difference set.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`dict`): A dictionary of terms and their frequency counts.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">joint</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">other</span><span class="p">))</span>
+        <span class="n">difference</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">joint</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">difference</span><span class="p">}</span></div>
+    
+<div class="viewcode-block" id="Corpus.plot"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="n">cumulative</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plotting.</span>
+<span class="sd">        </span>
+<span class="sd">        Note:</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`bool`): True</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">top</span><span class="p">,</span> <span class="n">cumulative</span> <span class="o">=</span> <span class="n">cumulative</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+    
+<div class="viewcode-block" id="Corpus.tabulate"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.tabulate">[docs]</a>    <span class="k">def</span> <span class="nf">tabulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">top</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tabulating.</span>
+<span class="sd">        </span>
+<span class="sd">        Note:</span>
+<span class="sd">            Works better when used to see few top terms.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`bool`): True</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">tabulate</span><span class="p">(</span><span class="n">top</span><span class="p">)</span> 
+        <span class="k">return</span> <span class="kc">True</span></div>
+    
+<div class="viewcode-block" id="Corpus.list_terms"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.list_terms">[docs]</a>    <span class="k">def</span> <span class="nf">list_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;It returns the list terms in the corpus</span>
+<span class="sd">        </span>
+<span class="sd">        Note:</span>
+<span class="sd">            Implementation needs refactoring.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`list`): An alphabetically sorted list.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span></div>
+
+    
+<div class="viewcode-block" id="Corpus.set_stemmer"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.set_stemmer">[docs]</a>    <span class="k">def</span> <span class="nf">set_stemmer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stemmer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The appointing a new stemmer function to the corpus.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            stemmer (x :obj:`str` -&gt; y: :obj:`str`): A stemmer function (default None)</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`bool`): True</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">stemmer</span> <span class="o">=</span> <span class="n">stemmer</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+        
+    
+<div class="viewcode-block" id="Corpus.compute_stems"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.compute_stems">[docs]</a>    <span class="k">def</span> <span class="nf">compute_stems</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The function returns the a dictionary of terms and their corresponding stems.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            stemmer (x :obj:`str` -&gt; y: :obj:`str`): A stemmer function (default None)</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`bool`): True</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stems</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">stemmer</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_terms</span><span class="p">()}</span>
+        <span class="k">return</span> <span class="kc">True</span>
+        <span class="c1"># Follwing bit is used to test NLTK stemmer</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_terms</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stems</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stemmer</span><span class="p">(</span><span class="n">k</span><span class="p">)</span></div>
+        
+    
+    
+<div class="viewcode-block" id="Corpus.get_stems"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.get_stems">[docs]</a>    <span class="k">def</span> <span class="nf">get_stems</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The function returns the a dictionary of terms and their corresponding stems.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`dict`): A dictionary of {term:stem of the term}.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stems</span><span class="p">:</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stems</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_stems</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stems</span></div>
+    
+<div class="viewcode-block" id="Corpus.label"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.label">[docs]</a>    <span class="k">def</span> <span class="nf">label</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The function labels yet not labeled terms according to the user defined scheme.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            marker (x :obj:`str` -&gt; y: :obj:`str`): A marker function</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`dict`): A dictionary of {term:label of term}.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">labels</span><span class="p">:</span> <span class="n">labels</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="p">:</span><span class="kc">None</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_terms</span><span class="p">()}</span>
+        <span class="k">for</span> <span class="n">t</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">labels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">v</span><span class="p">:</span> <span class="k">continue</span>
+            <span class="n">labels</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">marker</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span></div>
+    
+<div class="viewcode-block" id="Corpus.set_specific_set"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.set_specific_set">[docs]</a>    <span class="k">def</span> <span class="nf">set_specific_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">terms</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The function sets the set of corpus specific terms.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            terms (:obj:`set`): The list of corpus specific terms</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`bool`): True.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">specifics</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">terms</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+    
+<div class="viewcode-block" id="Corpus.to_pandas"><a class="viewcode-back" href="../../omterms.html#omterms.datauis.Corpus.to_pandas">[docs]</a>    <span class="k">def</span> <span class="nf">to_pandas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The function exports its data into pandas dataframe.</span>
+<span class="sd">        </span>
+<span class="sd">        Note:</span>
+<span class="sd">            ToDo: The function needs parameterization, generalization and error checks.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`pandas.DataFrame`) The tabulated data</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">DF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;Term&#39;</span><span class="p">:</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="s1">&#39;TF&#39;</span><span class="p">:</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">values</span><span class="p">())})</span>
+        <span class="n">wTF</span> <span class="o">=</span> <span class="p">{</span><span class="n">w</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">freq</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span><span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">wTF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;Term&#39;</span><span class="p">:</span><span class="nb">list</span><span class="p">(</span><span class="n">wTF</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="s1">&#39;wTF&#39;</span><span class="p">:</span><span class="nb">list</span><span class="p">(</span><span class="n">wTF</span><span class="o">.</span><span class="n">values</span><span class="p">())})</span>
+        <span class="n">Stem</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;Term&#39;</span><span class="p">:</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stems</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="s1">&#39;Stem&#39;</span><span class="p">:</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stems</span><span class="o">.</span><span class="n">values</span><span class="p">())})</span>
+        <span class="n">Score</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;Term&#39;</span><span class="p">:</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="s1">&#39;Score&#39;</span><span class="p">:</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="o">.</span><span class="n">values</span><span class="p">())})</span>
+        <span class="n">SType</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;Term&#39;</span><span class="p">:</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="s1">&#39;SType&#39;</span><span class="p">:</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">values</span><span class="p">())})</span>
+        <span class="n">wTFref</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;Term&#39;</span><span class="p">:</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="s1">&#39;wTFref&#39;</span><span class="p">:</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="o">.</span><span class="n">values</span><span class="p">())})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">Stem</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span> <span class="n">DF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">DF</span><span class="p">,</span> <span class="n">Stem</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;Term&#39;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;outer&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">wTF</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span> <span class="n">DF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">DF</span><span class="p">,</span> <span class="n">wTF</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;Term&#39;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;outer&#39;</span><span class="p">)</span> 
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">SType</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span> <span class="n">DF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">DF</span><span class="p">,</span> <span class="n">SType</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;Term&#39;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;outer&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">Score</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span> <span class="n">DF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">DF</span><span class="p">,</span> <span class="n">Score</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;Term&#39;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;outer&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">wTFref</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span> <span class="n">DF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">DF</span><span class="p">,</span> <span class="n">wTFref</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;Term&#39;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;outer&#39;</span><span class="p">)</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;wTF&#39;</span><span class="p">,</span><span class="s1">&#39;TF&#39;</span><span class="p">]</span> <span class="k">if</span>  <span class="s1">&#39;wTF&#39;</span> <span class="ow">in</span> <span class="n">DF</span><span class="o">.</span><span class="n">columns</span> <span class="k">else</span> <span class="p">[</span><span class="s1">&#39;TF&#39;</span><span class="p">]</span>
+        <span class="k">if</span>  <span class="s1">&#39;Score&#39;</span> <span class="ow">in</span> <span class="n">DF</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span> <span class="n">order</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Score&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">order</span>
+        <span class="n">DF</span> <span class="o">=</span> <span class="n">DF</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">ascending</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">DF</span>
+        
+        <span class="c1"># Redundant and is never run, it is from the initial version</span>
+        <span class="n">wTFd</span> <span class="o">=</span> <span class="p">{</span><span class="n">w</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">freq</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span><span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">wTF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">wTFd</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span> <span class="s1">&#39;wTF&#39;</span><span class="p">)</span>
+        <span class="n">wTF</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Term&#39;</span>
+        
+        <span class="n">TF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">items</span><span class="p">()),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;TF&#39;</span><span class="p">)</span>
+        <span class="n">TF</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Term&#39;</span>
+        
+        <span class="n">Stem</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stems</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Stem&#39;</span><span class="p">)</span>
+        <span class="n">Stem</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Term&#39;</span>
+        
+        <span class="n">Score</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Score&#39;</span><span class="p">)</span>
+        <span class="n">Score</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Term&#39;</span>
+        
+        <span class="n">SType</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;sType&#39;</span><span class="p">)</span>
+        <span class="n">SType</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Term&#39;</span>
+        
+        <span class="n">wTFref</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;wTFref&#39;</span><span class="p">)</span>
+        <span class="n">wTFref</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Term&#39;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">Stem</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">DF</span> <span class="o">=</span> <span class="n">Stem</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+            <span class="n">DF</span> <span class="o">=</span> <span class="n">DF</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">TF</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(),</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">DF</span> <span class="o">=</span> <span class="n">TF</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+            
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">wTF</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">DF</span> <span class="o">=</span> <span class="n">DF</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">wTF</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(),</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">Score</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">DF</span> <span class="o">=</span> <span class="n">DF</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">Score</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(),</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">SType</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">DF</span> <span class="o">=</span> <span class="n">DF</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">SType</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(),</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">wTFref</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">DF</span> <span class="o">=</span> <span class="n">DF</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">wTFref</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(),</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">DF</span></div></div>
+  
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Bulent Ozel.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

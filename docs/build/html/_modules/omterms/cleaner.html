@@ -1,0 +1,449 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>omterms.cleaner &#8212; Custom Term Extraction 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for omterms.cleaner</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;OpenMaker text cleaner.</span>
+
+<span class="sd">Author: Bulent Ozel</span>
+<span class="sd">e-mail: bulent.ozel@gmail.com</span>
+
+<span class="sd">The module contains a set of tools to clean textual data.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">nltk</span> <span class="k">import</span> <span class="n">FreqDist</span>
+<span class="kn">import</span> <span class="nn">re</span><span class="o">,</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">pprint</span> <span class="k">as</span> <span class="nn">pp</span>
+
+
+<span class="kn">from</span> <span class="nn">omterms</span> <span class="k">import</span> <span class="n">tokenizer</span>
+
+<div class="viewcode-block" id="TextCleaner"><a class="viewcode-back" href="../../omterms.html#omterms.cleaner.TextCleaner">[docs]</a><span class="k">class</span> <span class="nc">TextCleaner</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An object that contains a set of tools to clean and preprocess textual data.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        The object uses nltk.FreqDist object</span>
+<span class="sd">        For stem checks during pruninng it needs an external stemmer.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        exceptions (:obj:`list` of :obj:`str`): List of excepted terms.</span>
+<span class="sd">        stopwords (:obj:`list` of :obj:`str`): List of stopwords.</span>
+<span class="sd">        stemf: A stemmer funtion.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">stopwords</span> <span class="o">=</span> <span class="p">[],</span>
+                 <span class="n">exceptions</span> <span class="o">=</span> <span class="p">[],</span>
+                 <span class="n">fstemmer</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="n">x</span><span class="p">,</span> 
+                 <span class="n">stemcheck</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The class constructor.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            stopwords (:obj:`list` of :obj:`str`, optional): list of stopwords (default None).</span>
+<span class="sd">            exceptions (:obj:`set` of :obj:`str`, optional): list of excepted terms (default None).</span>
+<span class="sd">            fstemmer (x :obj:`str` -&gt; y: :obj:`str`, optional): A stemmer function (default f(x) = x)</span>
+<span class="sd">            stemcheck (:obj:`bool`): A flag to determine whether stems of exceptions should also be considered</span>
+<span class="sd">                (default False)</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">nltk</span> <span class="k">import</span> <span class="n">FreqDist</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span>  <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;It wasn&#39;t possible to import &#39;nltk.FreqDist.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopwords</span> <span class="o">=</span> <span class="n">stopwords</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stemf</span> <span class="o">=</span>  <span class="n">fstemmer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exceptions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_exceptions</span><span class="p">(</span><span class="n">exceptions</span><span class="p">,</span> <span class="n">stemcheck</span><span class="p">)</span>
+     
+    
+<div class="viewcode-block" id="TextCleaner.load_stopwords"><a class="viewcode-back" href="../../omterms.html#omterms.cleaner.TextCleaner.load_stopwords">[docs]</a>    <span class="k">def</span> <span class="nf">load_stopwords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spointer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method reloads a new stopwords list.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            Internal stopword is overwritten.</span>
+<span class="sd">            </span>
+<span class="sd">        Args:</span>
+<span class="sd">            spointer (:obj:`list` of :obj:`str`or :obj:`str`): Either file path string or</span>
+<span class="sd">                a list of stopwords.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if successful, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: Raised if a given file is not accessable.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">spointer</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stopwords</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">spointer</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">spointer</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stopwords</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">))</span>    
+        <span class="k">return</span> <span class="kc">True</span></div>
+    
+<div class="viewcode-block" id="TextCleaner.extend_stopwords"><a class="viewcode-back" href="../../omterms.html#omterms.cleaner.TextCleaner.extend_stopwords">[docs]</a>    <span class="k">def</span> <span class="nf">extend_stopwords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spointer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method extends a new stopwords list.</span>
+<span class="sd">            </span>
+<span class="sd">        Args:</span>
+<span class="sd">            spointer (:obj:`list` of :obj:`str`, :obj:`str`): Either file path string or</span>
+<span class="sd">                a list of stopwords.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if successful, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: Raised if a given file is not accessable.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">spointer</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">)):</span>
+            <span class="n">sws</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">spointer</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">spointer</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">newwords</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">))</span>
+                <span class="n">sws</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">newwords</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sws</span><span class="p">:</span> <span class="k">return</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopwords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopwords</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">sws</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopwords</span> <span class="k">else</span> <span class="n">sws</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+    
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="TextCleaner.freq_dist"><a class="viewcode-back" href="../../omterms.html#omterms.cleaner.TextCleaner.freq_dist">[docs]</a>    <span class="k">def</span> <span class="nf">freq_dist</span><span class="p">(</span><span class="n">words</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The static method computes frequency distribution of a word list.</span>
+<span class="sd">            </span>
+<span class="sd">        Args:</span>
+<span class="sd">            words (:obj:`list` of :obj:`str`, :obj:`str`): list of words.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`nltk.FreqDist`): Returns frequency dist.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">FreqDist</span><span class="p">([</span><span class="n">w</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span><span class="p">])</span></div>
+    
+<div class="viewcode-block" id="TextCleaner.clean"><a class="viewcode-back" href="../../omterms.html#omterms.cleaner.TextCleaner.clean">[docs]</a>    <span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">words</span><span class="p">,</span> <span class="n">display_top</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">logging</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">exceptions</span> <span class="o">=</span> <span class="p">[]):</span>
+        <span class="sd">&quot;&quot;&quot;Removes panctuations and stopwords from a corpus.</span>
+<span class="sd">            </span>
+<span class="sd">        Args:</span>
+<span class="sd">            words (:obj:`list` of :obj:`str`): The input corpus as list of words.</span>
+<span class="sd">            display_top (:obj:`int`, optional): Logging size (default 10).</span>
+<span class="sd">            logging (:obj:`bool`): Optional. When true stdout logging is done (default True).</span>
+<span class="sd">            exceptions (:obj:`list` of :obj:`str`, optional): The list terms that will not </span>
+<span class="sd">                be pruned (default None).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`nltk.FreqDist`): Returns the trimmed corpus as the NLTK obj.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="n">headline</span><span class="p">,</span> <span class="n">fd</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Local method for logging the updates.</span>
+<span class="sd">            </span>
+<span class="sd">            Args:</span>
+<span class="sd">                headline (:obj:`str`): The state description</span>
+
+<span class="sd">            Returns:</span>
+<span class="sd">                logging (:obj:`bool`): True.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">headline</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Total term counts: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">fd</span><span class="o">.</span><span class="n">values</span><span class="p">())))</span>
+            <span class="n">pp</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="n">fd</span><span class="o">.</span><span class="n">most_common</span><span class="p">(</span><span class="n">display_top</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        
+        <span class="n">FD</span> <span class="o">=</span> <span class="n">TextCleaner</span><span class="o">.</span><span class="n">freq_dist</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
+        <span class="n">headline</span> <span class="o">=</span> <span class="s2">&quot;Initial state:&quot;</span>
+        <span class="k">if</span> <span class="n">logging</span><span class="p">:</span> <span class="n">report</span><span class="p">(</span><span class="n">headline</span><span class="p">,</span> <span class="n">FD</span><span class="p">)</span>
+        
+        <span class="n">FD</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove_panctuation</span><span class="p">(</span><span class="n">FD</span><span class="p">,</span> <span class="n">exceptions</span> <span class="o">=</span> <span class="n">exceptions</span><span class="p">)</span>
+        <span class="n">headline</span> <span class="o">=</span> <span class="s2">&quot;Removing panctuation only terms...&quot;</span>
+        <span class="k">if</span> <span class="n">logging</span><span class="p">:</span> <span class="n">report</span><span class="p">(</span><span class="n">headline</span><span class="p">,</span> <span class="n">FD</span><span class="p">)</span>
+
+        <span class="n">FD</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove_stopwords</span><span class="p">(</span><span class="n">FD</span><span class="p">,</span> <span class="n">exceptions</span> <span class="o">=</span> <span class="n">exceptions</span><span class="p">)</span>
+        <span class="n">headline</span> <span class="o">=</span> <span class="s2">&quot;Removing stopwords...&quot;</span>
+        <span class="k">if</span> <span class="n">logging</span><span class="p">:</span> <span class="n">report</span><span class="p">(</span><span class="n">headline</span><span class="p">,</span> <span class="n">FD</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">FD</span></div>
+        
+    
+<div class="viewcode-block" id="TextCleaner.remove_panctuation"><a class="viewcode-back" href="../../omterms.html#omterms.cleaner.TextCleaner.remove_panctuation">[docs]</a>    <span class="k">def</span> <span class="nf">remove_panctuation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq_dist</span><span class="p">,</span> <span class="n">exceptions</span> <span class="o">=</span> <span class="p">[]):</span>
+        <span class="sd">&quot;&quot;&quot;The static method removes punctuation only terms.</span>
+<span class="sd">            </span>
+<span class="sd">        Args:</span>
+<span class="sd">            freq_dist (:obj:`nltk.FreqDist`): list of words and more.</span>
+<span class="sd">            exceptions (:obj:`list` of :obj:`str`, optional): The exception list.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`nltk.FreqDist`): Returns frequency dist.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">punctuation</span> <span class="ow">in</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">CHARACTERS_TO_SPLIT</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">punctuation</span> <span class="ow">in</span> <span class="n">exceptions</span><span class="p">:</span> <span class="k">continue</span>
+            <span class="n">dp</span> <span class="o">=</span> <span class="n">punctuation</span> <span class="o">*</span> <span class="mi">2</span>
+            <span class="n">tp</span> <span class="o">=</span> <span class="n">dp</span> <span class="o">+</span> <span class="n">punctuation</span>
+            <span class="k">if</span> <span class="n">punctuation</span> <span class="ow">in</span> <span class="n">freq_dist</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">del</span> <span class="n">freq_dist</span><span class="p">[</span><span class="n">punctuation</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">dp</span> <span class="ow">in</span> <span class="n">freq_dist</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">del</span> <span class="n">freq_dist</span><span class="p">[</span><span class="n">dp</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">tp</span> <span class="ow">in</span> <span class="n">freq_dist</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">del</span> <span class="n">freq_dist</span><span class="p">[</span><span class="n">tp</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">freq_dist</span></div>
+    
+<div class="viewcode-block" id="TextCleaner.remove_stopwords"><a class="viewcode-back" href="../../omterms.html#omterms.cleaner.TextCleaner.remove_stopwords">[docs]</a>    <span class="k">def</span> <span class="nf">remove_stopwords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq_dist</span><span class="p">,</span> <span class="n">exceptions</span> <span class="o">=</span> <span class="p">[]):</span>
+        <span class="sd">&quot;&quot;&quot;The static method removes stopwords.</span>
+<span class="sd">            </span>
+<span class="sd">        Args:</span>
+<span class="sd">            freq_dist (:obj:`nltk.FreqDist`): list of words and more.</span>
+<span class="sd">            exceptions (:obj:`list` of :obj:`str`, optional): The exception list.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`nltk.FreqDist`): Returns frequency dist.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopwords</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isexception</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">exceptions</span><span class="p">):</span> <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">freq_dist</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">del</span> <span class="n">freq_dist</span><span class="p">[</span><span class="n">term</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">freq_dist</span></div>
+    
+<div class="viewcode-block" id="TextCleaner.remove_numerals"><a class="viewcode-back" href="../../omterms.html#omterms.cleaner.TextCleaner.remove_numerals">[docs]</a>    <span class="k">def</span> <span class="nf">remove_numerals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq_dist</span><span class="p">,</span> <span class="n">remove_any</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">exceptions</span> <span class="o">=</span> <span class="p">[]):</span>
+        <span class="sd">&quot;&quot;&quot;The method removes terms with numeral literals.</span>
+<span class="sd">            </span>
+<span class="sd">        Note:</span>
+<span class="sd">            When remove_any is selected, literals such as 3D would vanish.</span>
+<span class="sd">            </span>
+<span class="sd">        Args:</span>
+<span class="sd">            freq_dist (:obj:`nltk.FreqDist`): list of words and more.</span>
+<span class="sd">            remove_any (:obj:`bool`, optional): If True mumeral and literal mixed terms are removed.</span>
+<span class="sd">            exceptions (:obj:`list` of :obj:`str`, optional): The exception list.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`nltk.FreqDist`): Returns frequency dist.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">freq_distN</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">freq_dist</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">remove_any</span><span class="p">:</span>
+            <span class="n">pattern_numbers</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">&#39;[0-9]&#39;</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">has_numbers</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+                <span class="k">return</span><span class="p">(</span><span class="n">pattern_numbers</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">freq_dist</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isexception</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">exceptions</span><span class="p">,</span> <span class="n">stemcheck</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span> <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">has_numbers</span><span class="p">(</span><span class="n">term</span><span class="p">):</span>
+                    <span class="c1">#print(term)</span>
+                    <span class="k">del</span> <span class="n">freq_distN</span><span class="p">[</span><span class="n">term</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pattern_letters</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">&#39;[a-z]&#39;</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">has_letters</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+                <span class="k">return</span><span class="p">(</span><span class="n">pattern_letters</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">freq_dist</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isexception</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">exceptions</span><span class="p">,</span> <span class="n">stemcheck</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span> <span class="k">continue</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">has_letters</span><span class="p">(</span><span class="n">term</span><span class="p">):</span>
+                    <span class="c1">#print(term)</span>
+                    <span class="k">del</span> <span class="n">freq_distN</span><span class="p">[</span><span class="n">term</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">freq_distN</span></div>
+                
+<div class="viewcode-block" id="TextCleaner.remove_short_terms"><a class="viewcode-back" href="../../omterms.html#omterms.cleaner.TextCleaner.remove_short_terms">[docs]</a>    <span class="k">def</span> <span class="nf">remove_short_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq_dist</span><span class="p">,</span> <span class="n">threshold</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">exceptions</span> <span class="o">=</span> <span class="p">[]):</span>
+        <span class="sd">&quot;&quot;&quot;The method removes terms that are below a certain length.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            freq_dist (:obj:`nltk.FreqDist`): list of words and more.</span>
+<span class="sd">            threshold (:obj:`int`, optional): The charcter length of a term (default 1).</span>
+<span class="sd">            exceptions (:obj:`list` of :obj:`str`, optional): The exception list.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`nltk.FreqDist`): Returns frequency dist.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">freq_distN</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">freq_dist</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">freq_dist</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isexception</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">exceptions</span><span class="p">):</span> <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">term</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">freq_distN</span><span class="p">[</span><span class="n">term</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">freq_distN</span></div>
+
+<div class="viewcode-block" id="TextCleaner.remove_rare_terms"><a class="viewcode-back" href="../../omterms.html#omterms.cleaner.TextCleaner.remove_rare_terms">[docs]</a>    <span class="k">def</span> <span class="nf">remove_rare_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq_dist</span><span class="p">,</span> <span class="n">below</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">exceptions</span> <span class="o">=</span> <span class="p">[]):</span>
+        <span class="sd">&quot;&quot;&quot;The method removes terms that have rare occurances.</span>
+<span class="sd">        </span>
+<span class="sd">        Note:</span>
+<span class="sd">            Such removal may help reduce errenous and random terms.</span>
+<span class="sd">            </span>
+<span class="sd">        Args:</span>
+<span class="sd">            freq_dist (:obj:`nltk.FreqDist`): list of words and more.</span>
+<span class="sd">            below (:obj:`int`, optional): The minumum allowed frequency count (default 3).</span>
+<span class="sd">            exceptions (:obj:`list` of :obj:`str`, optional): The exception list.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`nltk.FreqDist`): Returns frequency dist.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">freq_distN</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">freq_dist</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">freq_dist</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">exceptions</span><span class="p">:</span> <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">freq_dist</span><span class="p">[</span><span class="n">term</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">below</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">freq_distN</span><span class="p">[</span><span class="n">term</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">freq_distN</span></div>
+    
+    
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="TextCleaner.make_exceptions"><a class="viewcode-back" href="../../omterms.html#omterms.cleaner.TextCleaner.make_exceptions">[docs]</a>    <span class="k">def</span> <span class="nf">make_exceptions</span><span class="p">(</span><span class="n">exceptions</span><span class="p">,</span> <span class="n">stemf</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="n">x</span><span class="p">,</span> <span class="n">stemcheck</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The static method makes the exception list and returns it.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            exceptions (:obj:`list`): The list of exception terms.</span>
+<span class="sd">            stemf (x :obj:`str` -&gt; y: :obj:`str`, optional): A stemmer function (default f(x) = x)</span>
+<span class="sd">            stemcheck (:obj:`bool`, optional): if the list to be extended via the stems (default False)</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`set`): The exception set. If stemcheck is opted both terms and their stems </span>
+<span class="sd">                is be represented in the list.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">exceptions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">exceptions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">stemcheck</span><span class="p">:</span>
+            <span class="n">stems</span> <span class="o">=</span> <span class="p">[</span><span class="n">stemf</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">exceptions</span> <span class="k">if</span> <span class="n">e</span><span class="p">]</span>
+            <span class="n">exceptions</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">stems</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">exceptions</span></div>
+        
+        
+<div class="viewcode-block" id="TextCleaner.isexception"><a class="viewcode-back" href="../../omterms.html#omterms.cleaner.TextCleaner.isexception">[docs]</a>    <span class="k">def</span> <span class="nf">isexception</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">exceptions</span><span class="o">=</span><span class="p">[],</span> <span class="n">stemcheck</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The static makes the exception list and returns it.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            term (:obj:`str`): The term.</span>
+<span class="sd">            exceptions (:obj:`list`, optional): The list of exception terms (default None).</span>
+<span class="sd">            stemcheck (:obj:`bool`, optional): if the list to be extended via the stems (default False)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`bool`): </span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">extended</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">exceptions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">stemcheck</span><span class="p">:</span>
+            <span class="n">exceptions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_exceptions</span><span class="p">(</span><span class="n">exceptions</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stemf</span><span class="p">,</span> <span class="n">stemcheck</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">exceptions</span></div>
+    
+<div class="viewcode-block" id="TextCleaner.set_exceptions"><a class="viewcode-back" href="../../omterms.html#omterms.cleaner.TextCleaner.set_exceptions">[docs]</a>    <span class="k">def</span> <span class="nf">set_exceptions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exceptions</span><span class="p">,</span> <span class="n">stemcheck</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets instance-wide exception set.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            exceptions (:obj:`list` of `str`): The list of exception terms.</span>
+<span class="sd">            stemcheck (:obj:`bool`, optional): if the list to be extended via the stems (default False)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`bool`): True</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exceptions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_exceptions</span><span class="p">(</span><span class="n">exceptions</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stemf</span><span class="p">,</span> <span class="n">stemcheck</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+        
+<div class="viewcode-block" id="TextCleaner.reset_exceptions"><a class="viewcode-back" href="../../omterms.html#omterms.cleaner.TextCleaner.reset_exceptions">[docs]</a>    <span class="k">def</span> <span class="nf">reset_exceptions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Resets the exception set to empty.</span>
+
+<span class="sd">        Args:</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`bool`): </span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exceptions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+    
+<div class="viewcode-block" id="TextCleaner.remove_contains"><a class="viewcode-back" href="../../omterms.html#omterms.cleaner.TextCleaner.remove_contains">[docs]</a>    <span class="k">def</span> <span class="nf">remove_contains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq_dist</span><span class="p">,</span> <span class="n">literals</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">CHARACTERS_TO_SPLIT</span><span class="p">,</span> <span class="n">exceptions</span> <span class="o">=</span> <span class="p">[]):</span>
+        <span class="sd">&quot;&quot;&quot;Removes the terms that contains the specific literals.</span>
+<span class="sd">                </span>
+<span class="sd">        Args:</span>
+<span class="sd">            freq_dist (:obj:`nltk.FreqDist`): list of words and more.</span>
+<span class="sd">            literals (:obj:`list` of  :obj:`str`): list of literals.</span>
+<span class="sd">            exceptions (:obj:`list` of :obj:`str`, optional): The exception list.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`nltk.FreqDist`): Returns frequency dist.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">freq_distN</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">freq_dist</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">literals</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">freq_dist</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isexception</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">exceptions</span><span class="p">,</span> <span class="n">stemcheck</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span> <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">term</span><span class="p">):</span>
+                    <span class="c1">#print(term)</span>
+                    <span class="k">del</span> <span class="n">freq_distN</span><span class="p">[</span><span class="n">term</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">freq_distN</span></div></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Bulent Ozel.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

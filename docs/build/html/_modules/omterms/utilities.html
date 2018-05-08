@@ -1,0 +1,329 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>omterms.utilities &#8212; Custom Term Extraction 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for omterms.utilities</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;OpenMaker text utilities.</span>
+
+<span class="sd">The module holds a set of utilities for data handling and io related tasks.</span>
+
+<span class="sd">Author: Bulent Ozel</span>
+<span class="sd">e-mail: bulent.ozel@gmail.com</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">pprint</span> <span class="k">as</span> <span class="nn">pp</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+
+<div class="viewcode-block" id="format_output_fname"><a class="viewcode-back" href="../../omterms.html#omterms.utilities.format_output_fname">[docs]</a><span class="k">def</span> <span class="nf">format_output_fname</span><span class="p">(</span><span class="n">current_theme</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Formatting output file name.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">output_fname</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">word</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">current_theme</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)])</span>
+    <span class="k">return</span> <span class="n">output_fname</span></div>
+
+
+<div class="viewcode-block" id="load_from_file"><a class="viewcode-back" href="../../omterms.html#omterms.utilities.load_from_file">[docs]</a><span class="k">def</span> <span class="nf">load_from_file</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The method reloads a new stopwords list.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Internal stopword is overwritten.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        fname (:obj:`str`): a file path string</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (:obj:`set`): The list of terms</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: Raised if a given file is not accessable.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">))</span></div>
+    
+
+<div class="viewcode-block" id="pandas_filter_rows"><a class="viewcode-back" href="../../omterms.html#omterms.utilities.pandas_filter_rows">[docs]</a><span class="k">def</span> <span class="nf">pandas_filter_rows</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">col</span> <span class="o">=</span> <span class="s1">&#39;Score&#39;</span><span class="p">,</span> <span class="n">min_t</span><span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">max_t</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The method extracts rows from a Pandas data frame for the given score range.</span>
+<span class="sd">    The scores above the minimum and below the maximum is selected.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        This function should be generalized so that it can work on any predicate function.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (:obj:`pandas.core.frame.DataFrame`): A Pandas data frame.</span>
+<span class="sd">        col (:obj:`str`): The column that the filtering operation to be applied (default &#39;Score&#39;) </span>
+<span class="sd">        min_t (:obj:`float`): The minumum score threshold to be included when assigned (default None).</span>
+<span class="sd">        max_t (:obj:`float`): The maximum score threshold to be included when assigned (default None).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        df (:obj:`pandas.core.frame.DataFrame`): A Pandas data frame.</span>
+<span class="sd">    </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        TypeError: Raised if the column data type is not a number.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">col_type</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s1">&#39;float&#39;</span> <span class="ow">in</span> <span class="n">col_type</span> <span class="ow">or</span> <span class="s1">&#39;int&#39;</span> <span class="ow">in</span> <span class="n">col_type</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Column type should be either int or float&#39;</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="n">min_t</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">min_t</span><span class="p">]</span>
+    
+    <span class="k">if</span> <span class="n">max_t</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">max_t</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">df</span></div>
+
+
+<div class="viewcode-block" id="pandas_rename_cols"><a class="viewcode-back" href="../../omterms.html#omterms.utilities.pandas_rename_cols">[docs]</a><span class="k">def</span> <span class="nf">pandas_rename_cols</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;TF&#39;</span><span class="p">,</span> <span class="s1">&#39;wTF&#39;</span><span class="p">,</span> <span class="s1">&#39;Score&#39;</span><span class="p">],</span> <span class="n">prefix</span> <span class="o">=</span> <span class="s1">&#39;u&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The method renames designated columns of the the pandas data frame.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (:obj:`pandas.core.frame.DataFrame`): A Pandas data frame.</span>
+<span class="sd">        cols (:obj:`list` of :obj:`str`): The list of columns to renamed. </span>
+<span class="sd">       </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        df (:obj:`pandas.core.frame.DataFrame`): A Pandas data frame.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="p">:</span><span class="nb">str</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cols</span><span class="p">}</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">cols</span><span class="p">)</span><span class="o">==</span><span class="nb">list</span> <span class="k">else</span> <span class="n">cols</span>
+    <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">names</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="pandas_merge_dfs"><a class="viewcode-back" href="../../omterms.html#omterms.utilities.pandas_merge_dfs">[docs]</a><span class="k">def</span> <span class="nf">pandas_merge_dfs</span><span class="p">(</span><span class="n">dfs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The method renames designated columns of the the pandas data frame.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (:obj:`pandas.core.frame.DataFrame`): A Pandas data frame.</span>
+<span class="sd">        cols (:obj:`list` of :obj:`str`): The list of columns to renamed. </span>
+<span class="sd">       </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        df (:obj:`pandas.core.frame.DataFrame`): A Pandas data frame.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">dfs</span><span class="p">:</span> <span class="k">return</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;Term&#39;</span><span class="p">,</span><span class="s1">&#39;Stem&#39;</span><span class="p">,</span><span class="s1">&#39;SType&#39;</span><span class="p">,</span> <span class="s1">&#39;wTFref&#39;</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">dfs</span><span class="p">:</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="n">cols</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">cols</span><span class="p">:</span> <span class="k">return</span>
+    <span class="n">DF</span> <span class="o">=</span> <span class="n">dfs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dfs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+        <span class="n">DF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">DF</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">cols</span><span class="p">),</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;outer&#39;</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">rcols</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">DF</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">cols</span><span class="p">))</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Term&#39;</span><span class="p">,</span> <span class="s1">&#39;Stem&#39;</span><span class="p">]</span> <span class="k">if</span>  <span class="s1">&#39;Stem&#39;</span> <span class="ow">in</span> <span class="n">cols</span> <span class="k">else</span> <span class="p">[</span><span class="s1">&#39;Term&#39;</span><span class="p">]</span>
+    <span class="k">if</span>  <span class="s1">&#39;wTFref&#39;</span> <span class="ow">in</span> <span class="n">cols</span><span class="p">:</span> <span class="n">order</span> <span class="o">=</span> <span class="n">order</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;wTFref&#39;</span><span class="p">]</span>
+    <span class="k">if</span>  <span class="s1">&#39;SType&#39;</span> <span class="ow">in</span> <span class="n">cols</span><span class="p">:</span> <span class="n">order</span> <span class="o">=</span> <span class="n">order</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;SType&#39;</span><span class="p">]</span>
+    <span class="n">order</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">rcols</span><span class="p">)</span>
+    <span class="n">DF</span> <span class="o">=</span> <span class="n">DF</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">DF</span></div>
+       
+        
+<div class="viewcode-block" id="run_cleaning_process"><a class="viewcode-back" href="../../omterms.html#omterms.utilities.run_cleaning_process">[docs]</a><span class="k">def</span> <span class="nf">run_cleaning_process</span><span class="p">(</span><span class="n">Cleaner</span><span class="p">,</span> <span class="n">tokens</span><span class="p">,</span>
+                         <span class="n">exceptions</span> <span class="o">=</span> <span class="p">[],</span>
+                         <span class="n">minL</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                         <span class="n">minF</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+                         <span class="n">notallowed</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">],</span>
+                         <span class="n">logging</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Term function cleans and counts the words in the ist.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            Cleaner (:obj:`omterms.cleaner.TextCleaner&#39;): The text cleaning object.</span>
+
+<span class="sd">            tokens (:obj:`list` of :obj:`str` ): The list of words.</span>
+
+<span class="sd">            minL (:obj:`int`): The minimum allowed term length (default 1).</span>
+
+<span class="sd">            minF(:obj:`int`): The minimum allowed frequency count for the tabuleted outputs</span>
+<span class="sd">                (default 4).</span>
+
+<span class="sd">            notallowed (:obj:`list` of :obj:`str`, optional): The list of symbols that would flag</span>
+<span class="sd">                the removal of the term if needed (defualt [&#39;*&#39;])</span>
+
+<span class="sd">            exceptions (:obj:`list` of :obj:`str`, optional): The list of exceptions.</span>
+
+<span class="sd">            logging (:obj:`bool`): Logging (default True)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`nltk.FreqDist`): Returns the trimmed corpus as the NLTK obj, where essentially</span>
+<span class="sd">                it is python dictionary cleaned terms. The eys are terms and the values are </span>
+<span class="sd">                the frequency counts.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">exp</span> <span class="o">=</span> <span class="n">exceptions</span>
+    
+    <span class="n">ninit</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Cleaning process: Initial size of tokens = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ninit</span><span class="p">))</span>
+    
+    <span class="n">TFtokens</span> <span class="o">=</span> <span class="n">Cleaner</span><span class="o">.</span><span class="n">clean</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span><span class="n">logging</span> <span class="o">=</span> <span class="n">logging</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Reduction due to punctuations and stopwords = </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">TFtokens</span><span class="p">)))</span>
+   
+    <span class="n">uTFtokens</span> <span class="o">=</span> <span class="n">Cleaner</span><span class="o">.</span><span class="n">remove_numerals</span><span class="p">(</span><span class="n">TFtokens</span><span class="p">,</span> <span class="n">remove_any</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">exceptions</span> <span class="o">=</span> <span class="n">exp</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Reduction due to all numeral terms = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">TFtokens</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">uTFtokens</span><span class="p">)))</span>
+    <span class="n">TFtokens</span> <span class="o">=</span> <span class="n">uTFtokens</span>
+        
+    <span class="n">uTFtokens</span> <span class="o">=</span> <span class="n">Cleaner</span><span class="o">.</span><span class="n">remove_short_terms</span><span class="p">(</span><span class="n">TFtokens</span><span class="p">,</span> <span class="n">threshold</span> <span class="o">=</span> <span class="n">minL</span><span class="p">,</span> <span class="n">exceptions</span> <span class="o">=</span> <span class="n">exp</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Reduction due to short terms = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">TFtokens</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">uTFtokens</span><span class="p">)))</span>
+    <span class="n">TFtokens</span> <span class="o">=</span> <span class="n">uTFtokens</span>
+    
+    <span class="n">uTFtokens</span> <span class="o">=</span> <span class="n">Cleaner</span><span class="o">.</span><span class="n">remove_rare_terms</span><span class="p">(</span><span class="n">TFtokens</span><span class="p">,</span> <span class="n">below</span> <span class="o">=</span> <span class="n">minF</span><span class="p">,</span> <span class="n">exceptions</span> <span class="o">=</span> <span class="n">exp</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Reduction due to rare terms = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">TFtokens</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">uTFtokens</span><span class="p">)))</span>
+    <span class="n">TFtokens</span> <span class="o">=</span> <span class="n">uTFtokens</span>
+    
+    <span class="n">uTFtokens</span> <span class="o">=</span> <span class="n">Cleaner</span><span class="o">.</span><span class="n">remove_numerals</span><span class="p">(</span><span class="n">TFtokens</span><span class="p">,</span> <span class="n">remove_any</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">exceptions</span> <span class="o">=</span> <span class="n">exp</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Reduction due to partially numeral terms = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">TFtokens</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">uTFtokens</span><span class="p">)))</span>
+    <span class="n">TFtokens</span> <span class="o">=</span> <span class="n">uTFtokens</span>
+    
+    <span class="n">uTFtokens</span> <span class="o">=</span> <span class="n">Cleaner</span><span class="o">.</span><span class="n">remove_contains</span><span class="p">(</span><span class="n">TFtokens</span><span class="p">,</span> <span class="n">literals</span> <span class="o">=</span> <span class="n">notallowed</span><span class="p">,</span> <span class="n">exceptions</span> <span class="o">=</span> <span class="n">exp</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Reduction due to terms with not allowed symbols = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">TFtokens</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">uTFtokens</span><span class="p">)))</span>
+    <span class="n">TFtokens</span> <span class="o">=</span> <span class="n">uTFtokens</span>
+    
+    <span class="n">reduction</span> <span class="o">=</span> <span class="n">ninit</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">TFtokens</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The total term count reduction during this cleaning process = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">reduction</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">ninit</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Percentage = </span><span class="si">{}</span><span class="s2">%&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="mf">100.0</span> <span class="o">*</span> <span class="n">reduction</span><span class="o">/</span><span class="n">ninit</span><span class="p">),</span><span class="mi">2</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">TFtokens</span></div>
+
+
+<div class="viewcode-block" id="run_tokenizing_process"><a class="viewcode-back" href="../../omterms.html#omterms.utilities.run_tokenizing_process">[docs]</a><span class="k">def</span> <span class="nf">run_tokenizing_process</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The functions tokenizes the given input text.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text (:obj:`str` ): The input text.</span>
+<span class="sd">            </span>
+<span class="sd">            tokenizer (x :obj:`str` -&gt; y: :obj:`str`): The tokenizer function.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`list` of :obj:`str` ): The list of words as tokens.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Tokenizing the input text ..&#39;</span><span class="p">)</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done. Number of terms: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">tokens</span></div>
+
+<div class="viewcode-block" id="run_stemming_process"><a class="viewcode-back" href="../../omterms.html#omterms.utilities.run_stemming_process">[docs]</a><span class="k">def</span> <span class="nf">run_stemming_process</span><span class="p">(</span><span class="n">theCorpus</span><span class="p">,</span> <span class="n">stemf</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The functions computes the stems of terms in the corpus.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            theCorpus (:obj:`omterms.datauis.Corpus`): The text corpus.</span>
+<span class="sd">          </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            theCorpus (:obj:`omterms.datauis.Corpus`): The text corpus.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Stemming the terms in the corpus ..&#39;</span><span class="p">)</span>
+    <span class="n">theCorpus</span><span class="o">.</span><span class="n">set_stemmer</span><span class="p">(</span><span class="n">stemf</span><span class="p">)</span>
+    <span class="n">theCorpus</span><span class="o">.</span><span class="n">compute_stems</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done.&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">theCorpus</span></div>
+
+
+<div class="viewcode-block" id="summary_corpus"><a class="viewcode-back" href="../../omterms.html#omterms.utilities.summary_corpus">[docs]</a><span class="k">def</span> <span class="nf">summary_corpus</span><span class="p">(</span><span class="n">SC</span><span class="p">,</span> <span class="n">top</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span> <span class="n">bottom</span> <span class="o">=</span> <span class="mi">20</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The functions computes the stems of terms in the corpus.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            SC (:obj:`omterms.datauis.Corpus`): The text corpus.</span>
+<span class="sd">            top (:obj:`int`): The top most common items to be displayed (default 20).</span>
+<span class="sd">            bottom (:obj:`int`): The least common items to be displayed (default 20).</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`pandas.DataFrame`) The tabulated data</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Number of unique words = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">SC</span><span class="o">.</span><span class="n">get_count_uniques</span><span class="p">()))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Number of words = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">SC</span><span class="o">.</span><span class="n">get_size</span><span class="p">()))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Most frequents ::&gt;&gt;&#39;</span><span class="p">)</span>
+    <span class="n">pp</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="n">SC</span><span class="o">.</span><span class="n">get_top_frequents</span><span class="p">(</span><span class="n">top</span> <span class="o">=</span> <span class="n">top</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Least frequents ::&gt;&gt;&#39;</span><span class="p">)</span>
+    <span class="n">pp</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="n">SC</span><span class="o">.</span><span class="n">get_least_frequents</span><span class="p">(</span><span class="n">bottom</span> <span class="o">=</span> <span class="n">bottom</span><span class="p">))</span>
+    <span class="n">SC</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">top</span><span class="p">),</span> <span class="n">SC</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">top</span><span class="p">,</span> <span class="n">cumulative</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">SC</span><span class="o">.</span><span class="n">tabulate</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">SC</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Bulent Ozel.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

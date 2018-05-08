@@ -1,0 +1,388 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>omterms.measures &#8212; Custom Term Extraction 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for omterms.measures</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;OpenMaker term scoring tools.</span>
+
+<span class="sd">Author: Bulent Ozel</span>
+<span class="sd">e-mail: bulent.ozel@gmail.com</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">log</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">linear_model</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;Cannot import sklearn&quot;</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="Scoring"><a class="viewcode-back" href="../../omterms.html#omterms.measures.Scoring">[docs]</a><span class="k">class</span> <span class="nc">Scoring</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The object given term frequency distribution of a foreground specific corpus and a background</span>
+<span class="sd">    reference corpus, provides tools that help to compute specificity of each term in the foreground corpus.</span>
+<span class="sd">    </span>
+<span class="sd">    This kind of scoring is mainly to be used for the cases where an input text around a specific</span>
+<span class="sd">    theme or topic is given. The process expects a tokenized, cleaned text with term counts.</span>
+<span class="sd">    </span>
+<span class="sd">    Note:</span>
+<span class="sd">        It consumes a Corpus object and uses its methods and attributed and mutates it unless desired otherwise.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        sCorpus (:obj:`Corpus`): A Corpus class instance of the specific corpus to be scored.</span>
+<span class="sd">        rCorpus (:obj:`Corpus`): A Corpus class instance of the reference corpus.</span>
+<span class="sd">        common (:obj:`list` of `str`): The common terms between the foreground and backgrouns corpus</span>
+<span class="sd">        distinct (:obj:`list` of `str`): The terms observed in the foreground but not in the backgrouns corpus</span>
+<span class="sd">        model: a prediction model created during instantiation process using the data of the class instance.</span>
+<span class="sd">            For details see`form_prediction_model` method description. </span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sCorpus</span><span class="p">,</span> <span class="n">rCorpus</span><span class="p">,</span> <span class="n">nsteps</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">mutate</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">model_threshold</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The class constructor.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sCorpus (:obj:`Corpus`): A Corpus class instance of the specific corpus to be scored.</span>
+<span class="sd">            rCorpus (:obj:`Corpus`): A Corpus class instance of the reference corpus.</span>
+<span class="sd">            nsteps (:obj:`int`):  Number of phases to process at init.</span>
+<span class="sd">                1-&gt; raw, 2 -&gt; raw,stem, 3 -&gt;raw,stem,noref (default 3)</span>
+<span class="sd">            mutate (:obj:`bool`, optional): A flag when true mutates the input Corpus object </span>
+<span class="sd">                for specific text corpus (default False).</span>
+<span class="sd">            model_threshold (:obj:`float` or None) :  The minimum score value used for prediction model.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">sCorpus</span><span class="p">)</span> <span class="k">if</span> <span class="n">mutate</span> <span class="k">else</span> <span class="n">sCorpus</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">scores</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rCorpus</span> <span class="o">=</span> <span class="n">rCorpus</span>
+        <span class="n">nt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">get_count_uniques</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">common</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">rCorpus</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> / </span><span class="si">{}</span><span class="s1">  raw term matches found.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">common</span><span class="p">),</span> <span class="n">nt</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Identifying specificity score for each matched terms...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_commons</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distinct</span> <span class="o">=</span> <span class="n">sCorpus</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">rCorpus</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> / </span><span class="si">{}</span><span class="s1"> non-raw match found.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">distinct</span><span class="p">),</span> <span class="n">nt</span><span class="p">))</span>
+        <span class="n">phase</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">&gt;=</span> <span class="n">nsteps</span><span class="p">:</span> <span class="k">return</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Identifying specifificity score for stem matches...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_stem_commons</span><span class="p">()</span>
+        <span class="n">phase</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">&gt;=</span> <span class="n">nsteps</span><span class="p">:</span> <span class="k">return</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Forming prediction model for non-matching terms...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">form_prediction_model</span><span class="p">(</span><span class="n">model_threshold</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Computing specificity score for frequent distinct terms...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_distincts</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;All phases are done!&#39;</span><span class="p">)</span>
+        
+   
+<div class="viewcode-block" id="Scoring.compute_commons"><a class="viewcode-back" href="../../omterms.html#omterms.measures.Scoring.compute_commons">[docs]</a>    <span class="k">def</span> <span class="nf">compute_commons</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Computes the specifity score of the terms in the corpus.</span>
+<span class="sd">        </span>
+<span class="sd">        Note:</span>
+<span class="sd">            It is a simple log likelihood measure. It compares frequency count of a term in</span>
+<span class="sd">            a specific corpus versus its frequency count in the reference reference corpus.</span>
+<span class="sd">            Here assumption is that the reference corpus is a large enough sample of the language</span>
+<span class="sd">            at observing the occurance of a term. Then having a higher/lower observation frequency of</span>
+<span class="sd">            a term in the specific corpus is a proxy indicator for the term choice while having a debate</span>
+<span class="sd">            on the topic.</span>
+
+<span class="sd">            The likelihood ratio for a term $P_t$ is calculated as:</span>
+<span class="sd">            .. math::</span>
+<span class="sd">                $P_t = log ( (ntS/NS) / (ntR/NR) )$</span>
+<span class="sd">            </span>
+<span class="sd">            where</span>
+<span class="sd">                - *ntS* is the raw frequency count of the term in the entire specific corpus</span>
+<span class="sd">                - *ntR* is the raw frequenccy count of the term in the reference corpus</span>
+<span class="sd">                - *NS* is the total number of terms in the specific corpus</span>
+<span class="sd">                - *NR* is the total number of terms in the reference corpus</span>
+<span class="sd">            </span>
+<span class="sd">            It should be noted that frequency counts are calculated after having applied the same tokenization</span>
+<span class="sd">            and post processing such as excluding stop-words, pancuations, rare terms, etc both on the reference</span>
+<span class="sd">            corpus and the specific corpus.</span>
+<span class="sd">            </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`bool`): Notifying completion of scoring.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">common</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">freq</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">rCorpus</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">freq</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">ref</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rCorpus</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">freq</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;raw&#39;</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+    
+<div class="viewcode-block" id="Scoring.compute_stem_commons"><a class="viewcode-back" href="../../omterms.html#omterms.measures.Scoring.compute_stem_commons">[docs]</a>    <span class="k">def</span> <span class="nf">compute_stem_commons</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Computes the specifity score of the terms in the corpus when the term as it is not </span>
+<span class="sd">            matched by a term in the reference corpus. It matches the stems. The loglikelihood</span>
+<span class="sd">            ration is applied over the mean frequency counts of the matching stems.</span>
+<span class="sd">            </span>
+<span class="sd">            See `compute_commons` method description for details.</span>
+<span class="sd">            </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`bool`): Notifying completion of scoring.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">matched</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">distinct</span><span class="p">:</span>
+            <span class="n">stem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">stems</span><span class="p">[</span><span class="n">w</span><span class="p">]</span>
+            <span class="n">matches</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rCorpus</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">freq</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span><span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rCorpus</span><span class="o">.</span><span class="n">stems</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="n">stem</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">matches</span><span class="p">:</span> <span class="k">continue</span>
+            <span class="n">matched</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+            <span class="n">meanw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">freq</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">/</span> <span class="n">meanw</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;stem&#39;</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">ref</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="o">=</span> <span class="n">meanw</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> stems matched.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">matched</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distinct</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">distinct</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">matched</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+    
+    
+<div class="viewcode-block" id="Scoring.compute_distincts"><a class="viewcode-back" href="../../omterms.html#omterms.measures.Scoring.compute_distincts">[docs]</a>    <span class="k">def</span> <span class="nf">compute_distincts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Computes the specifity score of the terms in the corpus when neither the term nor its stems</span>
+<span class="sd">            matched by the background corpus.</span>
+<span class="sd">            </span>
+<span class="sd">        Note:</span>
+<span class="sd">            It uses a log linear regression model to predict likelihood of the dictinct terms.</span>
+<span class="sd">            The model is trained using the scores and frequencies within the matching set.</span>
+<span class="sd">            </span>
+<span class="sd">            See `form_prediction_model` method description for details.</span>
+<span class="sd">            </span>
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`bool`): Notifying completion of scoring.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">distinct</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">tf_dist</span><span class="p">[</span><span class="n">w</span><span class="p">]</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">w</span><span class="p">,</span><span class="n">f</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">ref</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;noref&#39;</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+    
+        
+<div class="viewcode-block" id="Scoring.form_prediction_model"><a class="viewcode-back" href="../../omterms.html#omterms.measures.Scoring.form_prediction_model">[docs]</a>    <span class="k">def</span> <span class="nf">form_prediction_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method creats the prediction model to be used for distinct terms.</span>
+<span class="sd">            </span>
+<span class="sd">        Note:</span>
+<span class="sd">            It is based on a log-linear regression. The model is created using the observed</span>
+<span class="sd">            scores and frequencies within the matching set. The model aims to fit a best line</span>
+<span class="sd">            to logarithm of the observed term frequencies vs associated scores.</span>
+<span class="sd">            </span>
+<span class="sd">            Considering the fact that frequent distinct terms are likely among the ones with a </span>
+<span class="sd">            higher specificity, the terms with relatively high scores are used for the regression.</span>
+<span class="sd">            The R-squared of the regression tests have been used for validation of the approach.</span>
+<span class="sd">            In the same reasoning among the all distinct terms the ones with relatively higher frequencies</span>
+<span class="sd">            are considered for scoring.</span>
+<span class="sd">            </span>
+<span class="sd">        ToDo:</span>
+<span class="sd">            As a second approach, the model training to be improved considering terms with relatively high term</span>
+<span class="sd">            frequencies and high specificity scores. Observe the scatter plots for the insight.</span>
+<span class="sd">            </span>
+<span class="sd">            An alternative, a third approach, would be forming the logarithmic bins on frequencies and using</span>
+<span class="sd">            distributional charcteristics of each bin at making predictions. For instance, by simply predicting</span>
+<span class="sd">            the median value as the guess. </span>
+<span class="sd">            </span>
+<span class="sd">        Args:</span>
+<span class="sd">            threshold (:obj:`float`, optional):  The default value is driven from regression tests on </span>
+<span class="sd">                test cases (default 1.0).</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`bool`): Notifying completion of scoring.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;The minimum score used for the modelling = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">threshold</span><span class="p">))</span>
+        <span class="n">distro</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_distro</span><span class="p">(</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">distro</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">distro</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">x</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">y</span><span class="p">:</span> <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">xa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">lm</span> <span class="o">=</span> <span class="n">linear_model</span><span class="o">.</span><span class="n">LinearRegression</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">lm</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">xa</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+    
+    
+    <span class="k">def</span> <span class="nf">_get_distro</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">islog</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method retrieves frequency and score distributions for the terms with a computed score.</span>
+<span class="sd">                        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            threshold (:obj:`float`, optional):  The default value is driven from regression tests on </span>
+<span class="sd">                test cases (default 1.0).</span>
+<span class="sd">            </span>
+<span class="sd">            islog (:obj:`bool`): Whether natural log of the frequency counts to be returned (default True).</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`dict`): &#39;x&#39; holds frequency counts, &#39;y&#39; holds scores .</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">scores</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">w</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">s</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span> <span class="k">continue</span>
+            <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">islog</span><span class="p">:</span>
+                <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">tf_dist</span><span class="p">[</span><span class="n">w</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">tf_dist</span><span class="p">[</span><span class="n">w</span><span class="p">])</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span><span class="n">y</span><span class="p">}</span>
+    
+    
+<div class="viewcode-block" id="Scoring.plot"><a class="viewcode-back" href="../../omterms.html#omterms.measures.Scoring.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">islog</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Scatter plot of frequency vs scores.</span>
+<span class="sd">                        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            threshold (:obj:`float`, optional):  The default value is driven from regression tests on </span>
+<span class="sd">                test cases (default 1.0).</span>
+<span class="sd">            </span>
+<span class="sd">            islog (:obj:`bool`): Whether natural log of the frequency counts to be returned (default True).</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`bool`): True.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">distro</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_distro</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">islog</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">distro</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">distro</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+        
+
+<div class="viewcode-block" id="Scoring.predict"><a class="viewcode-back" href="../../omterms.html#omterms.measures.Scoring.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">minp</span> <span class="o">=</span> <span class="mf">0.001</span><span class="p">,</span> <span class="n">minf</span> <span class="o">=</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method assigns a predicted score to a given term with a a frequency</span>
+<span class="sd">            over the designated threshold. An internally formed prediction model is used.</span>
+<span class="sd">            The natural logorithm of raw frequency counts is passed to the model. See </span>
+<span class="sd">            `form_prediction_model` method description for details.</span>
+<span class="sd">            </span>
+<span class="sd">        Args:</span>
+<span class="sd">            count (:obj:`int`): The raw frequency count.</span>
+<span class="sd">            minp (:obj:`float`, optional): The relative frequency threshold (default 0.001).</span>
+<span class="sd">            minf (:obj:`int`, optional): The raw frequency threshold (default 3).</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`float`): The predicted score.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">:</span> <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">count</span> <span class="o">&lt;</span> <span class="n">minf</span><span class="p">:</span> <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">tf_dist</span><span class="o">.</span><span class="n">freq</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">minp</span><span class="p">:</span> <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="n">count</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span></div>
+   
+
+<div class="viewcode-block" id="Scoring.get_scores_by"><a class="viewcode-back" href="../../omterms.html#omterms.measures.Scoring.get_scores_by">[docs]</a>    <span class="k">def</span> <span class="nf">get_scores_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stype</span><span class="o">=</span><span class="s1">&#39;raw&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method returns computed/available scores by the label of the terms.</span>
+<span class="sd">        </span>
+<span class="sd">        Note:</span>
+<span class="sd">            The labels in this implementation correspond:</span>
+<span class="sd">            - raw: the term as it is was identified in the background corpus, so</span>
+<span class="sd">                a loglikelihood scoring was applied</span>
+<span class="sd">            - stem: not the term as it is but its stem was identified, so mean of the observed</span>
+<span class="sd">                stem occurances in the background was used as the reference</span>
+<span class="sd">            - noref: neither the term nor its stem was identified, so the prediction model was used</span>
+<span class="sd">                for the frequent ones.</span>
+<span class="sd">            </span>
+<span class="sd">        Args:</span>
+<span class="sd">            stype (:obj:`str`, optional): The term scoring type (default &#39;raw&#39;).</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`dict`): The term scores.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">w</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">w</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span><span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sCorpus</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="n">stype</span><span class="p">}</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Bulent Ozel.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
