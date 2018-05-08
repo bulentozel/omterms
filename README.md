@@ -27,11 +27,11 @@ Collaborators(s):
 
 ## Install
 
-### Via Python's standard distribution channel PyPI (soon)
+### A. Via Python's standard distribution channel PyPI
 ```bash
 pip install omterms
 ```
-### Via its GitHub source 
+### B. Via from its GitHub source 
 ```bash
 git clone https://github.com/bulentozel/omterms.git
 ```
