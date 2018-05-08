@@ -7,6 +7,10 @@ Bulent Ozel, UZH
 
 --------
 
+Support for this work is partly covered by the OpenMaker Project: [http://openmaker.eu/](http://openmaker.eu/)
+
+-------
+
 The first objective of this module is to provide customizable and standardized text preprocessing phase prior to further analyses where more advanced machine learning and or statistical techniques can be applied and compared with each other. In that sense, it provides a pipelined set of functionalities (i) to be able to inspect, organize, prune and merge texts around one or very few specific theme(s) or topic(s), (ii) remove unwanted terms or literals from the texts, (iii) tokenize the texts, (iv) count the terms in texts, and (v) when desired stem the tokenized terms.
 
 The second objective of this module is to be able compare or score a foreground corpus or a specific corpus against a background corpus or reference corpus. Example use cases could be, for instance, exploring the language of a sub-culture, a community, or a movement looking at to what extend the specific use of the language of the group differentiates itself from the common language.
@@ -16,8 +20,36 @@ the underlining assumptions of NMF, LDA or LSI based approaches, then tools from
 
 Nevertheless, the outputs of this module, such as its normalized term frequencies or the specificity scores it associates to them regarding to a reference background corpus, can be used as input to other matrix decomposition techniques.  
 
-----------
 
+----------
+## Install
+
+### Via Python's standard distribution channel PyPI (soon)
+```bash
+pip install omterms
+```
+### Via its GitHub source 
+```bash
+git clone https://github.com/bulentozel/omterms.git
+```
+
+```bash
+cd omterms
+```
+
+```bash
+pip install .
+```
+
+## Quick Usage
+```python
+>>>from omterms.interface import *
+>>>extract_terms("Some input X text to process less then 3 seconds.").head()
+```
+## More on Usage
+[Please see the tutorial.](https://github.com/bulentozel/omterms/blob/master/tutorial.ipynb)
+
+-------------
 
 ## 1. Objective
 
@@ -90,9 +122,9 @@ Given for instance a set of texts around open source software movement a term th
 ### Likelihood ratio
 It is a simple measure computed comparing frequency count of a term in a specific corpus versus its frequency count in the reference reference corpus. Here assumption is that the reference corpus is a large enough sample of the language at observing the occurance of a term. Then having a higher/lower observation frequency of a term in the specific corpus is a proxy indicator for the term choice while having a debate on the topic.
 
-The likelihood ratio for a term P_t is calculated as:
+The likelihood ratio for a term $P_t$ is calculated as:
 
-P_t = log ( (ntS/NS) / (ntR/NR) )
+$P_t = log ( (ntS/NS) / (ntR/NR) )$
 
 where
 
@@ -164,4 +196,9 @@ The factors that need to be considered are:
 #### Scoring and value system profiling
 
 When one attempts to use scores, for instance, around the basic ten human values and one wants to construct the value system of the person, then both ranking of the scores as well as the relevant importance of each score from a number of texts from the same person should be taken into consideration.
+
+------------------------------------------------------------
+Learn more about the OpenMaker project: http://openmaker.eu/
+
+------------------------------------------------------------
 
