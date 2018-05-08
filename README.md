@@ -89,7 +89,7 @@ The method outlined here aims to set-up a base line for future improvements.
      * differrent problem domains
      * analysis on a single theme with limited training set
 
-## 2. Overall Work Flow
+## 1. Overall work flow
 In short, the workflow presented on this notebook is the second stage on a workflow objective of which is being able to measure relevance of a given external input to a specific theme, issue or topic. The steps of the work flow is as follows.
 
 1. Forming a specific corpus where the corpus consists of set of documents around a topic. The corpus could be
@@ -105,7 +105,7 @@ In short, the workflow presented on this notebook is the second stage on a workf
 3. Given a list of weighted terms which are more likely to occur or reprsent a theme, concept or topic and input query text measure the relevance of the input text to the topic/theme/concept. [The notebook in this link](https://github.com/bulentozel/OpenMaker/blob/master/Semantics/Score%20Text.ipynb) demonstrates one way doing such scoring of a given text against the curated set of terms of this particular module.
 
 
-## 3. Suggested Future Work
+## 2. Suggested future work
 
 * Comparing and combining this comparison based scoring with matrix decompostion based topic modelling approaches such as NMF, LDA, LSI.
 
@@ -119,7 +119,7 @@ In short, the workflow presented on this notebook is the second stage on a workf
     - experiment with extracting noun phrases and words, for this use NLTK's regular expression module for POS (part of speeach) analysis.
     - extract n-grams where n=1,2,3
 
-## 4. Definitions and Assumptions
+## 3. Definitions and assumptions
 
 ### Assumptions
 * At the comparison stage, it is assumed that a document's terms tend to be relatively frequent within the document as compared to an external reference corpus. However, it should be noted this assumption is contested in the field. See the paper by Chuang et el.
@@ -151,7 +151,7 @@ where
 It should be noted that frequency counts are calculated after having applied the same tokenization and post processing such as excluding stop-words, pancuations, rare terms, etc both on the reference corpus and the specific corpus.
 
 
-### 5. Some thoughts an a conceptual approach at using the extracted keywords or phrases to predict topical relevance of a new text. 
+## 4. Some thoughts an a conceptual approach at using the extracted keywords or phrases to predict topical relevance of a new text. 
 
 Using the outcome of this technique to score arbitrary input texts against a single issue such as financial sustainability or against a set of issues such as the 10 basic human values requires a set of normalization of the raw scores and their rescaling/transformation.
 
@@ -183,7 +183,7 @@ The factors that need to be considered are:
 
 When one attempts to use scores, for instance, around the basic ten human values and one wants to construct the value system of the person, then both ranking of the scores as well as the relevant importance of each score from a number of texts from the same person should be taken into consideration.
 
-## 6. State of the art 
+## 5. State of the art 
 
 * Survey Paper: Kazi Saidul Hasan and Vincent Ng, 2014. “Automatic Keyphrase Extraction: A Survey of the State of the Art” Proceedings of the 52nd Annual Meeting of the Association for Computational Linguistics, pages 1262–1273.
 
