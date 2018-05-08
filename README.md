@@ -12,7 +12,7 @@ The first objective of this module is to provide a customizable and standardized
 The second objective of this module is to be able compare or score a foreground corpus or a specific corpus against a background corpus or reference corpus. Example use cases could be, for instance, exploring the language of a sub-culture, a community, or a movement looking at to what extend the specific use of the language of the group differentiates itself from the common language.
 
 In cases when there are more than a few number of themes or topics, and where each topic is represented with a large set of documents that validates the employment of standardized matrix decomposition based methodologies, then the scoring option of this module can be skipped entirely. More specifically, in use cases where the objective is being able to classify and differentiate a number of topics or issues from each other and where there are sufficient data that fulfills
-the underlining assumptions of NMF, LDA or LSI based approaches, then tools from, for instance, Python’s sklearn.decomposition package are suggested.
+the underlining assumptions of NMF, LDA or LSI based approaches, then tools from, for instance, Python’s [sklearn.decomposition](http://scikit-learn.org/stable/modules/decomposition.html#non-negative-matrix-factorization-nmf-or-nnmf) package are suggested.
 
 Nevertheless, the outputs of this module, such as its normalized term frequencies or the specificity scores it associates to them regarding to a reference background corpus, can be used as input to other matrix decomposition techniques.  
 
