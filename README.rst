@@ -76,15 +76,37 @@ Via its GitHub source
 
     pip install .
 
-Quick Usage
+A quick use
 -----------
 
 .. code:: python
 
     >>> from omterms.interface import *
     >>> extract_terms("Some input X text to process less then 3 seconds.").head()
+    Configuring the text cleaner ...
+    A single text is provided.
+    Extracting the terms ...
+    Tokenizing the input text ..
+    Done. Number of terms: 10
+    Cleaning process: Initial size of tokens = 10
+    Reduction due to punctuations and stopwords = 3.
+    Reduction due to all numeral terms = 1
+    Reduction due to short terms = 1
+    Reduction due to rare terms = 0
+    Reduction due to partially numeral terms = 0
+    Reduction due to terms with not allowed symbols = 0
+    The total term count reduction during this cleaning process = 5
+    Percentage = 50%
+    COMPLETED.
+       TF     Term  wTF
+    0   1    input  0.2
+    1   1     text  0.2
+    2   1  process  0.2
+    3   1     less  0.2
+    4   1  seconds  0.2
+    >>> 
 
-More on Usage
+More on usage
 -------------
 
 `Please see the
@@ -92,28 +114,22 @@ tutorial. <https://github.com/bulentozel/omterms/blob/master/tutorial.ipynb>`__
 
 --------------
 
-1. Objective
-------------
+--------------
 
-This notebook sketches the initial exercise on identifiying a weighted
-set of key terms using a specific corpus.
+Roadmap on Keyword and Keyphrase Extraction
+===========================================
 
 The method outlined here aims to set-up a base line for future
-improvements. See the relevant sections below. \* It uses a statistical
-approach combined with standardized procedures that are widely applied
-in standard NLP workflows. \* In this base line, it aims to present a
-work flow that can be ablied to \* different languages \* differrent
-problem domains \* It relies on a domain specific corpus as a foreground
-corpus and a reference corpus as the background corpus \* In this work
-flow specific corpus is formed via supervised crawling on the wikipedia
-\* In the exercises below the NLTK's Brown corpus is used as the
-reference background corpus. However, in the next work round, we aim to
-use full Wikipedia corpus under the same language of the specific corpus
-or a reprsentative random sample of it. \* The normalized comparison of
-candidate keywords within specific vs reference corpus is used as a
-proxy indication of the relevance of the candidate keyword for the given
-topic that is reprseneted by the collection of articles under the
-specific corpus.
+improvements.
+
+-  It uses a statistical approach combined with standardized procedures
+   that are widely applied in standard NLP workflows.
+-  In this base line, it aims to present a work flow that can be ablied
+   to
+
+   -  different languages
+   -  differrent problem domains
+   -  analysis on a single theme with limited training set
 
 2. Overall Work Flow
 --------------------
@@ -151,26 +167,11 @@ the work flow is as follows.
    demonstrates one way doing such scoring of a given text against the
    curated set of terms of this particular module.
 
-3. Work-flow Process in this Particular Module
-----------------------------------------------
-
-1. Loading the reference corpus and a topic specific corpus
-2. Tokenizing and cleaning the reference corpus and the specific corpus
-3. Calculating term frequency counts of the reference corpus and the
-   specific corpus
-4. Identifying common terms in both corpuses
-5. Identifying distinctive terms that occur in the specific corpus but
-   not in reference corpus, if any
-6. Reducing the terms in the dinstinctive set by an iterative manual
-   inspection process as well as by using a curated list of distinctive
-   terms on the topic.
-7. Computing likelihood ratio (empirical probabilities) of the terms
-   that are observed in the specific topic
-8. Tabulating identified list of terms, their raw frequencies and
-   weights.
-
-4. Suggested Future Work
+3. Suggested Future Work
 ------------------------
+
+-  Comparing and combining this comparison based scoring with matrix
+   decompostion based topic modelling approaches such as NMF, LDA, LSI.
 
 -  Using language specicif term frequency counts of Wikipedia itself for
    comparisons. In NLP terminology, the *foreground* corpus around a
@@ -178,9 +179,6 @@ the work flow is as follows.
 
 -  Improving the semantic crawler of the previous stage to be able to
    increase quality of the specific corpuses
-
--  Adding new scoring types that measures relevance of a given term to a
-   given topic.
 
 Methodological Improvements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -193,15 +191,15 @@ Methodological Improvements
       analysis.
    -  extract n-grams where n=1,2,3
 
-5. Definitions and Assumptions
+4. Definitions and Assumptions
 ------------------------------
 
 Assumptions
 ~~~~~~~~~~~
 
--  In the current state of the task it is assumed that a document's
-   terms tend to be relatively frequent within the document as compared
-   to an external reference corpus. However, it should be noted this
+-  At the comparison stage, it is assumed that a document's terms tend
+   to be relatively frequent within the document as compared to an
+   external reference corpus. However, it should be noted this
    assumption is contested in the field. See the paper by Chuang et el.
 
 -  Condidering the fact that the crawler is used to aggregate
@@ -256,58 +254,8 @@ applied the same tokenization and post processing such as excluding
 stop-words, pancuations, rare terms, etc both on the reference corpus
 and the specific corpus.
 
-6. State of the art
--------------------
-
--  Survey Paper: Kazi Saidul Hasan and Vincent Ng, 2014. “Automatic
-   Keyphrase Extraction: A Survey of the State of the Art” Proceedings
-   of the 52nd Annual Meeting of the Association for Computational
-   Linguistics, pages 1262–1273.
-
--  Survey Paper: Sifatullah Siddiqi and Aditi Sharan. Article: Keyword
-   and Keyphrase Extraction Techniques: A Literature Review.
-   International Journal of Computer Applications 109(2):18-23, January
-   2015
-
--  Survey Paper: Z. A. Merrouni, B. Frikh, and B. Ouhbi. Automatic
-   keyphrase extraction: An overview of the state of the art. In 2016
-   4th IEEE Colloquium on Information Science and Technology (CiSt),
-   pages 306–313, Oct 2016
-
--  PageRank - Topical: Zhiyuan Liu, Wenyi Huang, Yabin Zheng and Maosong
-   Sun, 2010. “Automatic Keyphrase Extraction via Topic Decomposition”.
-   Proceeding EMNLP '10 Proceedings of the 2010 Conference on Empirical
-   Methods in Natural Language Processing Pages 366-376
-
--  RAKE (Rapid Automatic Keyword Extraction ): Stuart Rose, Dave Engel,
-   Nick Cramer, and Wendy Cowley. Automatic keyword extraction from
-   individual documents. Text Mining, pages 1–20, 2010.
-
--  TextRank - Graph Based : Rada Mihalcea and Paul Tarau. Textrank:
-   Bringing order into texts. Association for Computational Linguistics,
-   2004.
-
--  STOPWORDS: S. Popova, L. Kovriguina, D. Mouromtsev, and I. Khodyrev.
-   Stopwords in keyphrase extraction problem. In 14th Conference
-
--  Corpus Similarity - Keyword frequency based: Adam Kilgarriff. Using
-   word frequency lists to measure corpus homogeneity and similarity
-   between corpora. In Proceedings of ACLSIGDAT Workshop on very large
-   corpora, pages 231–245, 1997.
-
--  Recommendation - Keyphrase Based: F. Ferrara, N. Pudota and C. Tasso.
-   A keyphrase-based paper recommender system. In: Digital Libraries and
-   Archives. Springer Berlin Heidelberg, 2011. p. 14-25.
-
--  Jason Chuang, Christopher D. Manning, Jeffrey Heer, 2012. "Without
-   the Clutter of Unimportant Words": Descriptive Keyphrases for Text
-   Visualization" ACM Trans. on Computer-Human Interaction, 19(3), 1–29.
-
-Appendix
---------
-
-Scoring
-~~~~~~~
+5. Some thoughts an a conceptual approach at using the extracted keywords or phrases to predict topical relevance of a new text.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Using the outcome of this technique to score arbitrary input texts
 against a single issue such as financial sustainability or against a set
@@ -404,6 +352,53 @@ human values and one wants to construct the value system of the person,
 then both ranking of the scores as well as the relevant importance of
 each score from a number of texts from the same person should be taken
 into consideration.
+
+6. State of the art
+-------------------
+
+-  Survey Paper: Kazi Saidul Hasan and Vincent Ng, 2014. “Automatic
+   Keyphrase Extraction: A Survey of the State of the Art” Proceedings
+   of the 52nd Annual Meeting of the Association for Computational
+   Linguistics, pages 1262–1273.
+
+-  Survey Paper: Sifatullah Siddiqi and Aditi Sharan. Article: Keyword
+   and Keyphrase Extraction Techniques: A Literature Review.
+   International Journal of Computer Applications 109(2):18-23, January
+   2015
+
+-  Survey Paper: Z. A. Merrouni, B. Frikh, and B. Ouhbi. Automatic
+   keyphrase extraction: An overview of the state of the art. In 2016
+   4th IEEE Colloquium on Information Science and Technology (CiSt),
+   pages 306–313, Oct 2016
+
+-  PageRank - Topical: Zhiyuan Liu, Wenyi Huang, Yabin Zheng and Maosong
+   Sun, 2010. “Automatic Keyphrase Extraction via Topic Decomposition”.
+   Proceeding EMNLP '10 Proceedings of the 2010 Conference on Empirical
+   Methods in Natural Language Processing Pages 366-376
+
+-  RAKE (Rapid Automatic Keyword Extraction ): Stuart Rose, Dave Engel,
+   Nick Cramer, and Wendy Cowley. Automatic keyword extraction from
+   individual documents. Text Mining, pages 1–20, 2010.
+
+-  TextRank - Graph Based : Rada Mihalcea and Paul Tarau. Textrank:
+   Bringing order into texts. Association for Computational Linguistics,
+   2004.
+
+-  STOPWORDS: S. Popova, L. Kovriguina, D. Mouromtsev, and I. Khodyrev.
+   Stopwords in keyphrase extraction problem. In 14th Conference
+
+-  Corpus Similarity - Keyword frequency based: Adam Kilgarriff. Using
+   word frequency lists to measure corpus homogeneity and similarity
+   between corpora. In Proceedings of ACLSIGDAT Workshop on very large
+   corpora, pages 231–245, 1997.
+
+-  Recommendation - Keyphrase Based: F. Ferrara, N. Pudota and C. Tasso.
+   A keyphrase-based paper recommender system. In: Digital Libraries and
+   Archives. Springer Berlin Heidelberg, 2011. p. 14-25.
+
+-  Jason Chuang, Christopher D. Manning, Jeffrey Heer, 2012. "Without
+   the Clutter of Unimportant Words": Descriptive Keyphrases for Text
+   Visualization" ACM Trans. on Computer-Human Interaction, 19(3), 1–29.
 
 +--------------------------------------------------------------+
 | Learn more about the OpenMaker project: http://openmaker.eu/ |
