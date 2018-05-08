@@ -49,6 +49,8 @@ decomposition techniques.
 Support for this work is partly covered by the OpenMaker Project:
 http://openmaker.eu/
 
+Collaborators(s): \* Hamza Zeytinoglu
+
 --------------
 
 Install
