@@ -73,9 +73,14 @@ class TextCleaner(object):
         if isinstance(spointer, (list, set)):
             self.stopwords = set(spointer)
             return True
-        
-        with open(spointer, "r") as f:
-            self.stopwords = set(f.read().strip().split("\n"))    
+
+        try:
+            with open(spointer, "r") as f:
+                self.stopwords = set(f.read().strip().split("\n"))
+        except EnvironmentError:
+            print('No custom stopword list is given, nltk.corpus.stopwords will be used.')
+            from nltk.corpus import stopwords
+            self.stopwords = stopwords.words('english')
         return True
     
     def extend_stopwords(self, spointer):
@@ -95,9 +100,13 @@ class TextCleaner(object):
         if isinstance(spointer, (list, set)):
             sws = set(spointer)
         else:
-            with open(spointer, "r") as f:
-                newwords = set(f.read().strip().split("\n"))
-                sws = set(newwords)
+            try:
+                with open(spointer, "r") as f:
+                    newwords = set(f.read().strip().split("\n"))
+                    sws = set(newwords)
+            except EnvironmentError:
+                print('File access error at {} loading is skipped.'.format(spointer))
+                sws = None
         if not sws: return False
         self.stopwords = self.stopwords.union(sws) if self.stopwords else sws
         return True

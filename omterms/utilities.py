@@ -32,13 +32,13 @@ def load_from_file(fname):
     Returns:
         (:obj:`set`): The list of terms
 
-    Raises:
-        FileNotFoundError: Raised if a given file is not accessable.
-
     """
-    with open(fname, "r") as f:
-        return list(f.read().strip().split("\n"))
-    
+    try:
+        with open(fname, "r") as f:
+            return list(f.read().strip().split("\n"))
+    except EnvironmentError:
+        print('File access error at {}, data loading is skipped.'.format(fname))
+        return []
 
 def pandas_filter_rows(df, col = 'Score', min_t= None, max_t = None):
     """The method extracts rows from a Pandas data frame for the given score range.

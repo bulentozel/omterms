@@ -69,7 +69,7 @@ Todo:
 
 """
 
-import copy
+import copy, os
 
 from omterms import tokenizer
 from omterms.datauis import WikiArticles, Corpus
@@ -105,7 +105,7 @@ def extract_terms(texts,
                   refcorpus = None,
                   export = False,
                   basefname = OUTPUT_FNAME,
-                  outputdir = OUTPUT_FOLDER, 
+                  outputdir = OUTPUT_FOLDER,
                   notallowed_symbols = NOTALLOWED,
                   nonremovable_terms = TERMS_SPECIFIC,
                   file_standard_stopwords = STOPWORDS_STANDARD,
@@ -157,7 +157,7 @@ def extract_terms(texts,
                    or :obj:`dict` of `str`
                    or :obj:`omterms.WikiArticles`, optional): The reference corpus
                        (Default None)
-           The refcorpus can beny of the following:
+           The refcorpus can be any of the following:
                 - None: if it is none yet the a scoring process is requested then
                     NLTK's Brown corpus is loaded.
                 - a string: A plain text.
@@ -177,21 +177,22 @@ def extract_terms(texts,
         outputdir (:obj:`str`, optional): The file path, that is the folder to export
             the tabulated outputs in .csv files (default './data/').
         
-        notallowed_symbols (:obj:`list` of `str`, optional): The list of symbols 
-            that would flag the removal of the term if needed 
-            (defualt omterms.tokenizer.CHARACTERS_TO_SPLIT
+        notallowed_symbols (:obj:`list` of :obj:`str`, optional):
+            The list of symbols  that would flag the removal of the term if needed
+            (defualt omterms.tokenizer.CHARACTERS_TO_SPLIT)
             
         nonremovable_terms (:obj:`str`, optional): File path to the list 
             of exceptions.
         
-        file_standard_stopwords (:obj:`str`, optional): The file path to the 
-            standard stopward list, if desired and exists.
+        file_standard_stopwords (:obj:`str` or :obj:`list` or :obj:`set`, optional):
+            A file path to the standard stopword list, if desired and exists or a
+            stoplist or set.
             
             Note: The removal would not take place if the term is a specific
                 term or marked as an exception.
         
-        file_specific_stopwords (:obj:`str`, optional): The file path to a 
-            specifix stopward list, if desired and exists.
+        file_specific_stopwords (:obj:`str` or :obj:`list` or :obj:`set`, optional):
+            The file path to a specific stopword list, if desired and exists or list.
             
             Note: The removal would not take place if the term is a specific term that
             is if marked as an exception.
@@ -262,20 +263,25 @@ def extract_terms(texts,
             csvfile_name = outputdir + prefix + '_' + basefname
         else:
             csvfile_name = outputdir + basefname
-            
-        with open(csvfile_name, 'w') as csvfile:
+
+        with open(csvfile_name, 'w'):
             df.to_csv(csvfile_name)
         print('Results are exported to file: {}'.format(csvfile_name))
-    
-        
+
+    if not os.path.isdir(outputdir):
+        outputdir = os.getcwd() + '/'
+        print('Outputs will be written under {}'.format(outputdir))
+
+
     print('Configuring the text cleaner ...')
     Cleaner = TextCleaner()
+
     Cleaner.load_stopwords(file_standard_stopwords)
     if file_specific_sopwords:
         Cleaner.extend_stopwords(file_specific_sopwords)
-    if nonremovable_terms:
+    if type(nonremovable_terms) not in [list, set]:
         nonremovable_terms = load_from_file(nonremovable_terms)
-        Cleaner.set_exceptions(nonremovable_terms)
+    Cleaner.set_exceptions(nonremovable_terms)
     
     # Reference corpus if exists:
     if 'compare' in extra_process:
