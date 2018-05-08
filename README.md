@@ -43,8 +43,8 @@ pip install .
 
 ## Quick Usage
 ```python
->>>from omterms.interface import *
->>>extract_terms("Some input X text to process less then 3 seconds.").head()
+>>> from omterms.interface import *
+>>> extract_terms("Some input X text to process less then 3 seconds.").head()
 ```
 ## More on Usage
 [Please see the tutorial.](https://github.com/bulentozel/omterms/blob/master/tutorial.ipynb)
