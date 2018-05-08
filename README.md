@@ -45,6 +45,29 @@ pip install .
 ```python
 >>> from omterms.interface import *
 >>> extract_terms("Some input X text to process less then 3 seconds.").head()
+Configuring the text cleaner ...
+A single text is provided.
+Extracting the terms ...
+Tokenizing the input text ..
+Done. Number of terms: 10
+Cleaning process: Initial size of tokens = 10
+Reduction due to punctuations and stopwords = 3.
+Reduction due to all numeral terms = 1
+Reduction due to short terms = 1
+Reduction due to rare terms = 0
+Reduction due to partially numeral terms = 0
+Reduction due to terms with not allowed symbols = 0
+The total term count reduction during this cleaning process = 5
+Percentage = 50%
+COMPLETED.
+   TF     Term  wTF
+0   1    input  0.2
+1   1     text  0.2
+2   1  process  0.2
+3   1     less  0.2
+4   1  seconds  0.2
+>>> 
+
 ```
 ## More on Usage
 [Please see the tutorial.](https://github.com/bulentozel/omterms/blob/master/tutorial.ipynb)
