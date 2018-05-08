@@ -15,8 +15,6 @@ In cases when there are more than a few number of themes or topics, and where ea
 
 Nevertheless, the outputs of this module such as normalized term frequencies or the specificity scores associated to them with respect to a reference background corpus can be used as input to other matrix decomposition techniques.
 
-For a general introduction on keyword and keyphrase extraction see the readme file.
-
 ----------
 
 
