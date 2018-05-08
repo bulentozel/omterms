@@ -1,17 +1,23 @@
 
 # Discovery and Representation of Open Making Related Terms
---------
+
 Bulent Ozel, UZH
 
 ```bulent.ozel@gmail.com```
 
 --------
 
-It should noted that the primary focus of the text processing in this process is to be able to collect, clean, tokenize and prune an input text around **one or very few specific theme(s) or topic(s)**.
+The first objective of this module is to provide customizable and standardized text preprocessing phase prior to further analyses where more advanced machine learning and or statistical techniques can be applied and compared with each other. In that sense, it provides a pipelined set of functionalities (i) to be able to inspect, organize, prune and merge texts around one or very few specific theme(s) or topic(s), (ii) remove unwanted terms or literals from the texts, (iii) tokenize the texts, (iv) count the terms in texts, and (v) when desired stem the tokenized terms.
 
-In cases when there are multiple themes with statsitically large and sufficient set of documents then standard topic modelling techniques such as NMF, LDA, LSI are suggested for the task. Those standarized approaches are based on matrix decomposition techniques and can be employed to capture and measure the specificity of terms around the topics.
+The second objective of this module is to be able compare or score a foreground corpus or a specific corpus against a background corpus or reference corpus. Example use cases could be, for instance, exploring the language of a sub-culture, a community, or a movement looking at to what extend the specific use of the language of the group differentiates itself from the common language.
 
-Nevertheless, the normalized term frequencies and as well as the specificity scores associated to them with respect to a reference background corpus, can be used as input to other matrix decomposition techniques when multiple themes grouped together terms' specificity at being able to diffenntiate these themes from each other is the concern.
+In cases when there are more than a few number of themes or topics, and where each topic is represented with a large set of documents that validates the employment of standardized matrix decomposition based methodologies, then the scoring option of this module can be skipped entirely. More specifically, in use cases where the objective is being able to classify and differentiate a number of topics or issues from each other and where there are sufficient data that fulfills the underlining assumptions of NMF, LDA or LSI based approaches, then tools, for instance, from Python’s sklearn.decomposition package are suggested.
+
+Nevertheless, the outputs of this module such as normalized term frequencies or the specificity scores associated to them with respect to a reference background corpus can be used as input to other matrix decomposition techniques.
+
+For a general introduction on keyword and keyphrase extraction see the readme file.
+
+----------
 
 
 ## 1. Objective
