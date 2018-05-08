@@ -9,10 +9,9 @@ The module contains a set of tools to clean textual data.
 """
 
 from nltk import FreqDist
-from numpy import log, mean
-import json, csv, re, copy
+import re, copy
 import pprint as pp
-import pandas as pd
+
 
 from omterms import tokenizer
 

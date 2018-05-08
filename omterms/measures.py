@@ -6,14 +6,10 @@ e-mail: bulent.ozel@gmail.com
 
 """
 
-import json, csv, re, copy
-import pprint as pp
-import pandas as pd
+import copy
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy import log, mean
-
-from omterms import tokenizer
+from numpy import log
 
 try:
     from sklearn import linear_model

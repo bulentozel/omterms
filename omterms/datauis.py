@@ -9,9 +9,7 @@ The module contains a set of tools used to hold and process text corpuses and co
 """
 
 from nltk import FreqDist
-from numpy import log, mean
-import json, csv, re, copy
-import pprint as pp
+import json, copy
 import pandas as pd
 
 class WikiArticles(object):

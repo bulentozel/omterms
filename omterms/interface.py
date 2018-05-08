@@ -69,14 +69,7 @@ Todo:
 
 """
 
-import json, csv, re, copy
-import pprint as pp
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-from numpy import log, mean
-import nltk
-from nltk.corpus import brown
+import copy
 
 from omterms import tokenizer
 from omterms.datauis import WikiArticles, Corpus
@@ -355,5 +348,4 @@ def extract_terms(texts,
         dfsl.append(pandas_rename_cols(df, prefix = t))
     DF = pandas_merge_dfs(dfsl)
     if export: export_as_csv(DF)
-    return DF   
-              
+    return DF

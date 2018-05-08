@@ -8,14 +8,9 @@ e-mail: bulent.ozel@gmail.com
 
 """
 
-import json, csv, re, copy
 import pprint as pp
 import pandas as pd
-import numpy as np
-from numpy import log, mean
-from functools import reduce
 
-from omterms.datauis import WikiArticles
 
 def format_output_fname(current_theme):
     """Formatting output file name.
