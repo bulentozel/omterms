@@ -7,7 +7,7 @@ Bulent Ozel, UZH
 
 -----------
 
-The first objective of this module is to provide customizable and standardized text preprocessing phase prior to further analyses where more advanced machine learning and or statistical techniques can be applied and compared with each other. In that sense, it provides a pipelined set of functionalities (i) to be able to inspect, organize, prune and merge texts around one or very few specific theme(s) or topic(s), (ii) remove unwanted terms or literals from the texts, (iii) tokenize the texts, (iv) count the terms in texts, and (v) when desired stem the tokenized terms.
+The first objective of this module is to provide a customizable and standardized text preprocessing prior to further analyses where more advanced machine learning and or statistical techniques can be applied and compared with each other. In that sense, it provides a pipelined set of functionalities (i) to be able to inspect, organize, prune and merge texts around one or very few specific theme(s) or topic(s), (ii) remove unwanted terms or literals from the texts, (iii) tokenize the texts, (iv) count the terms in texts, and (v) when desired stem the tokenized terms.
 
 The second objective of this module is to be able compare or score a foreground corpus or a specific corpus against a background corpus or reference corpus. Example use cases could be, for instance, exploring the language of a sub-culture, a community, or a movement looking at to what extend the specific use of the language of the group differentiates itself from the common language.
 
