@@ -5,11 +5,7 @@ Bulent Ozel, UZH
 
 ```bulent.ozel@gmail.com```
 
---------
-
-Support for this work is partly covered by the OpenMaker Project: [http://openmaker.eu/](http://openmaker.eu/)
-
--------
+-----------
 
 The first objective of this module is to provide customizable and standardized text preprocessing phase prior to further analyses where more advanced machine learning and or statistical techniques can be applied and compared with each other. In that sense, it provides a pipelined set of functionalities (i) to be able to inspect, organize, prune and merge texts around one or very few specific theme(s) or topic(s), (ii) remove unwanted terms or literals from the texts, (iii) tokenize the texts, (iv) count the terms in texts, and (v) when desired stem the tokenized terms.
 
@@ -20,8 +16,12 @@ the underlining assumptions of NMF, LDA or LSI based approaches, then tools from
 
 Nevertheless, the outputs of this module, such as its normalized term frequencies or the specificity scores it associates to them regarding to a reference background corpus, can be used as input to other matrix decomposition techniques.  
 
+--------
+
+Support for this work is partly covered by the OpenMaker Project: [http://openmaker.eu/](http://openmaker.eu/)
 
 ----------
+
 ## Install
 
 ### Via Python's standard distribution channel PyPI (soon)
