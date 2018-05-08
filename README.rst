@@ -134,7 +134,7 @@ improvements.
    -  differrent problem domains
    -  analysis on a single theme with limited training set
 
-2. Overall Work Flow
+1. Overall work flow
 --------------------
 
 In short, the workflow presented on this notebook is the second stage on
@@ -170,7 +170,7 @@ the work flow is as follows.
    demonstrates one way doing such scoring of a given text against the
    curated set of terms of this particular module.
 
-3. Suggested Future Work
+2. Suggested future work
 ------------------------
 
 -  Comparing and combining this comparison based scoring with matrix
@@ -194,7 +194,7 @@ Methodological Improvements
       analysis.
    -  extract n-grams where n=1,2,3
 
-4. Definitions and Assumptions
+3. Definitions and assumptions
 ------------------------------
 
 Assumptions
@@ -257,8 +257,8 @@ applied the same tokenization and post processing such as excluding
 stop-words, pancuations, rare terms, etc both on the reference corpus
 and the specific corpus.
 
-5. Some thoughts an a conceptual approach at using the extracted keywords or phrases to predict topical relevance of a new text.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+4. Some thoughts an a conceptual approach at using the extracted keywords or phrases to predict topical relevance of a new text.
+--------------------------------------------------------------------------------------------------------------------------------
 
 Using the outcome of this technique to score arbitrary input texts
 against a single issue such as financial sustainability or against a set
@@ -348,7 +348,7 @@ interval.
    a polarization measure.*
 
 Scoring and value system profiling
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When one attempts to use scores, for instance, around the basic ten
 human values and one wants to construct the value system of the person,
@@ -356,7 +356,7 @@ then both ranking of the scores as well as the relevant importance of
 each score from a number of texts from the same person should be taken
 into consideration.
 
-6. State of the art
+5. State of the art
 -------------------
 
 -  Survey Paper: Kazi Saidul Hasan and Vincent Ng, 2014. “Automatic
