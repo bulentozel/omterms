@@ -74,6 +74,8 @@ COMPLETED.
 
 -------------
 
+# Keyword and Keypharse Extraction
+
 ## 1. Objective
 
 This notebook sketches the initial exercise on identifiying a weighted set of key terms using a specific corpus.
@@ -83,10 +85,8 @@ The method outlined here aims to set-up a base line for future improvements. See
  * In this base line, it aims to present a work flow that can be ablied to
      * different languages
      * differrent problem domains
- * It relies on a domain specific corpus as a foreground corpus and a reference corpus as the background corpus
- * In this work flow specific corpus is formed via supervised crawling on the wikipedia
- * In the exercises below the NLTK's Brown corpus is used as the reference background corpus. However, in the next work round, we aim to use full Wikipedia corpus under the same language of the specific corpus or a reprsentative random sample of it. 
- * The normalized comparison of candidate keywords within specific vs reference corpus is used as a proxy indication of the relevance of the candidate keyword for the given topic that is reprseneted by the collection of articles under the specific corpus.
+ * For scoring stage it relies on a domain specific corpus as a foreground corpus and a reference corpus as the background corpus
+ 
 
 ## 2. Overall Work Flow
 In short, the workflow presented on this notebook is the second stage on a workflow objective of which is being able to measure relevance of a given external input to a specific theme, issue or topic. The steps of the work flow is as follows.
@@ -104,33 +104,24 @@ In short, the workflow presented on this notebook is the second stage on a workf
 3. Given a list of weighted terms which are more likely to occur or reprsent a theme, concept or topic and input query text measure the relevance of the input text to the topic/theme/concept. [The notebook in this link](https://github.com/bulentozel/OpenMaker/blob/master/Semantics/Score%20Text.ipynb) demonstrates one way doing such scoring of a given text against the curated set of terms of this particular module.
 
 
-## 3. Work-flow Process in this Particular Module
-1. Loading the reference corpus and a topic specific corpus
-2. Tokenizing and cleaning the reference corpus and the specific corpus
-3. Calculating term frequency counts of the reference corpus and the specific corpus
-4. Identifying common terms in both corpuses
-5. Identifying distinctive terms that occur in the specific corpus but not in reference corpus, if any
-6. Reducing the terms in the dinstinctive set by an iterative manual inspection process as well as by  using a curated list of distinctive terms on the topic.
-7. Computing likelihood ratio (empirical probabilities) of the terms that are observed in the specific topic
-8. Tabulating identified list of terms, their raw frequencies and weights.
+## 3. Suggested Future Work
 
-## 4. Suggested Future Work
+* Comparing and combining this comparison based scoring with matrix decompostion based topic modelling approaches such as NMF, LDA, LSI.
 
 * Using language specicif term frequency counts of Wikipedia itself for comparisons. In NLP terminology, the *foreground* corpus around a topic needs to be compared and contrasted to a *background* corpus.
 
 * Improving the semantic crawler of the previous stage to be able to increase quality of the specific corpuses
 
-* Adding new scoring types that measures relevance of a given term to a given topic.
 
 ### Methodological Improvements
 * Instead of tokenizing all terms, examine possibilities of key-phrase extrcation combining with *tf-idf* and 
     - experiment with extracting noun phrases and words, for this use NLTK's regular expression module for POS (part of speeach) analysis.
     - extract n-grams where n=1,2,3
 
-## 5. Definitions and Assumptions
+## 4. Definitions and Assumptions
 
 ### Assumptions
-* In the current state of the task it is assumed that a document's terms tend to be relatively frequent within the document as compared to an external reference corpus. However, it should be noted this assumption is contested in the field. See the paper by Chuang et el.
+* At the comparison stage, it is assumed that a document's terms tend to be relatively frequent within the document as compared to an external reference corpus. However, it should be noted this assumption is contested in the field. See the paper by Chuang et el.
 
 * Condidering the fact that the crawler is used to aggregate semantically related set of documents into a single document, *tf x idf* is equivalent to *tf*. As can be seen below, we use a normalized version of *tf*: *ntS / NS*.
 
@@ -158,38 +149,9 @@ where
 
 It should be noted that frequency counts are calculated after having applied the same tokenization and post processing such as excluding stop-words, pancuations, rare terms, etc both on the reference corpus and the specific corpus.
 
-## 6. State of the art 
 
-* Survey Paper: Kazi Saidul Hasan and Vincent Ng, 2014. “Automatic Keyphrase Extraction: A Survey of the State of the Art” Proceedings of the 52nd Annual Meeting of the Association for Computational Linguistics, pages 1262–1273.
+### 6. Some thoughts an a conceptual approach at using the extracted keywords or phrases to predict topical relevance of a new text. 
 
-* Survey Paper: Sifatullah Siddiqi and Aditi Sharan. Article: Keyword and Keyphrase Extraction Techniques: A Literature Review. International Journal of Computer Applications 109(2):18-23, January 2015
-
-* Survey Paper: Z. A. Merrouni, B. Frikh, and B. Ouhbi. Automatic keyphrase extraction: An overview of the state of the art. In 2016 4th IEEE
-Colloquium on Information Science and Technology
-(CiSt), pages 306–313, Oct 2016
-
-* PageRank - Topical: Zhiyuan Liu, Wenyi Huang, Yabin Zheng and Maosong Sun, 2010. “Automatic Keyphrase Extraction via Topic Decomposition”. Proceeding EMNLP '10 Proceedings of the 2010 Conference on Empirical Methods in Natural Language Processing Pages 366-376 
-
-* RAKE (Rapid Automatic Keyword Extraction ): Stuart Rose, Dave Engel, Nick Cramer, and Wendy Cowley. Automatic
-keyword extraction from individual documents. Text Mining, pages 1–20, 2010.
-
-* TextRank - Graph Based : Rada Mihalcea and Paul Tarau. Textrank: Bringing order into texts.
-Association for Computational Linguistics, 2004.
-
-* STOPWORDS: S. Popova, L. Kovriguina, D. Mouromtsev, and I. Khodyrev. Stopwords
-in keyphrase extraction problem. In 14th Conference
-
-* Corpus Similarity - Keyword frequency based: Adam Kilgarriff. Using word frequency lists to measure corpus homogeneity and similarity between corpora. In Proceedings of ACLSIGDAT Workshop on very large corpora, pages 231–245, 1997.
-
-* Recommendation - Keyphrase Based: F. Ferrara, N. Pudota and C. Tasso. A keyphrase-based paper recommender system. In: Digital Libraries and Archives. Springer Berlin Heidelberg, 2011. p. 14-25.
-
-* Jason Chuang, Christopher D. Manning, Jeffrey Heer, 2012. "Without the Clutter of Unimportant Words": Descriptive Keyphrases for Text Visualization" ACM Trans. on Computer-Human Interaction, 19(3), 1–29.
-
-## Appendix
-
-### Scoring
-
-    
 Using the outcome of this technique to score arbitrary input texts against a single issue such as financial sustainability or against a set of issues such as the 10 basic human values requires a set of normalization of the raw scores and their rescaling/transformation.
 
 The factors that need to be considered are:
@@ -219,6 +181,34 @@ The factors that need to be considered are:
 #### Scoring and value system profiling
 
 When one attempts to use scores, for instance, around the basic ten human values and one wants to construct the value system of the person, then both ranking of the scores as well as the relevant importance of each score from a number of texts from the same person should be taken into consideration.
+
+## 7. State of the art 
+
+* Survey Paper: Kazi Saidul Hasan and Vincent Ng, 2014. “Automatic Keyphrase Extraction: A Survey of the State of the Art” Proceedings of the 52nd Annual Meeting of the Association for Computational Linguistics, pages 1262–1273.
+
+* Survey Paper: Sifatullah Siddiqi and Aditi Sharan. Article: Keyword and Keyphrase Extraction Techniques: A Literature Review. International Journal of Computer Applications 109(2):18-23, January 2015
+
+* Survey Paper: Z. A. Merrouni, B. Frikh, and B. Ouhbi. Automatic keyphrase extraction: An overview of the state of the art. In 2016 4th IEEE
+Colloquium on Information Science and Technology
+(CiSt), pages 306–313, Oct 2016
+
+* PageRank - Topical: Zhiyuan Liu, Wenyi Huang, Yabin Zheng and Maosong Sun, 2010. “Automatic Keyphrase Extraction via Topic Decomposition”. Proceeding EMNLP '10 Proceedings of the 2010 Conference on Empirical Methods in Natural Language Processing Pages 366-376 
+
+* RAKE (Rapid Automatic Keyword Extraction ): Stuart Rose, Dave Engel, Nick Cramer, and Wendy Cowley. Automatic
+keyword extraction from individual documents. Text Mining, pages 1–20, 2010.
+
+* TextRank - Graph Based : Rada Mihalcea and Paul Tarau. Textrank: Bringing order into texts.
+Association for Computational Linguistics, 2004.
+
+* STOPWORDS: S. Popova, L. Kovriguina, D. Mouromtsev, and I. Khodyrev. Stopwords
+in keyphrase extraction problem. In 14th Conference
+
+* Corpus Similarity - Keyword frequency based: Adam Kilgarriff. Using word frequency lists to measure corpus homogeneity and similarity between corpora. In Proceedings of ACLSIGDAT Workshop on very large corpora, pages 231–245, 1997.
+
+* Recommendation - Keyphrase Based: F. Ferrara, N. Pudota and C. Tasso. A keyphrase-based paper recommender system. In: Digital Libraries and Archives. Springer Berlin Heidelberg, 2011. p. 14-25.
+
+* Jason Chuang, Christopher D. Manning, Jeffrey Heer, 2012. "Without the Clutter of Unimportant Words": Descriptive Keyphrases for Text Visualization" ACM Trans. on Computer-Human Interaction, 19(3), 1–29.
+
 
 ------------------------------------------------------------
 Learn more about the OpenMaker project: http://openmaker.eu/
