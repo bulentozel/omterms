@@ -20,6 +20,9 @@ Nevertheless, the outputs of this module, such as its normalized term frequencie
 
 Support for this work is partly covered by the OpenMaker Project: [http://openmaker.eu/](http://openmaker.eu/)
 
+Collaborators(s):
+   * Hamza Zeytinglu
+
 ----------
 
 ## Install
