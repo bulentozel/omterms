@@ -10,7 +10,7 @@ Bulent Ozel, UZH
 
 Support for this work is partly covered by the OpenMaker Project: [http://openmaker.eu/](http://openmaker.eu/)
 
-Collaborators(s):
+Collaborator(s):
    * Hamza Zeytinoglu
 
 ----------
