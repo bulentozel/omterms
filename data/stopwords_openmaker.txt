@@ -49,3 +49,5 @@ tt
 von
 na
 org
+index
+edit
