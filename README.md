@@ -1,11 +1,10 @@
 
 # Discovery and Representation of Open Making Related Terms
 
+-----------
 Bulent Ozel, UZH
 
 ```bulent.ozel@gmail.com```
-
------------
 
 --------
 
