@@ -5,9 +5,19 @@
 Discovery and Representation of Open Making Related Terms
 =========================================================
 
-Bulent Ozel, UZH
++-------------+
+| Bulent      |
+| Ozel, UZH   |
++-------------+
+| ``bulent.oz |
+| el@gmail.co |
+| m``         |
++-------------+
 
-``bulent.ozel@gmail.com``
+Support for this work is partly covered by the OpenMaker Project:
+http://openmaker.eu/
+
+Collaborator(s): \* Hamza Zeytinoglu
 
 --------------
 
@@ -44,15 +54,6 @@ Nevertheless, the outputs of this module, such as its normalized term
 frequencies or the specificity scores it associates to them regarding to
 a reference background corpus, can be used as input to other matrix
 decomposition techniques.
-
---------------
-
-Support for this work is partly covered by the OpenMaker Project:
-http://openmaker.eu/
-
-Collaborators(s): \* Hamza Zeytinoglu
-
---------------
 
 Install
 -------
@@ -283,30 +284,29 @@ The factors that need to be considered are:
    subject matter of the inputs texts vary among each other. In other
    words, this factor would matter to a very high significance, let's
    say when one wants to compare perceptions of indivuduals on the role
-   of traditions in the personal lives and when this question is not
-   asked them in a uniform manner that under the same social, cultural,
+   of privacy in democracies and when this question is not asked them in
+   a uniform manner, that is under the same social, cultural,
    environmental and physical conditions.
 
-   Let’s assume that issue under investigation is again the perception
-   and role of traditions in personal lives. It is possible that the
-   same blogger with a strong opinion on traditions (i) may not touch
-   the issue while talking on data science, (ii) he would slightly touch
-   the issue while he talks about her preferences in mobile devices
-   (iii) He dives into subject using all keywords and phrases when he
-   talks about impact of traditions on social order. In brief, it is
-   necessary to offset the variability of the topical relavance of an
-   input text to the issue under investigation when arbitrary text
-   samples are used for scoring.
+   Let’s assume that issue under investigation is again pricacy in
+   democracies. It is possible that the same individual as a blogger who
+   has a strong pro-privacy opinion (i) may not touch the issue while
+   talking on data science, (ii) he would slightly touch the issue while
+   he talks about her preferences in mobile devices (iii) He dives into
+   subject using all keywords and phrases when he talks about impact of
+   privacy in a democratic life. In brief, it is necessary to offset the
+   variability of the topical relavance of an input text to the issue
+   under investigation when arbitrary text samples are used for scoring.
 
    *An offsetting scheme can be devised when opinion or perception of an
    actor is to be measured with respect to more than one factor that
    define the issue under investigation. For instance, when we want to
    measure the position of a political leader on individual liberties vs
    social security or when we want to profile discourse of the political
-   leader as of a ten basic human values we could employ some simple
-   statistical methods in order to offset the topical relevance of the
-   discourses or the speeches of the political figure to what we would
-   like to measure.*
+   leader as of a number of basic human values we could employ some
+   simple statistical methods in order to offset the topical relevance
+   of the discourses or the speeches of the political figure to what we
+   would like to measure.*
 
    *A simple method could be rescaling the scores on each sub factor
    such as the scores of liberty and security that are measured from the
@@ -327,13 +327,14 @@ amplitudes. Then these rankings can be scaled to for instance to a 0-1
 interval.
 
 -  **Level of subjectivity**. This is variability in terms of relevant
-   importance attributed to each issue given a set of issues. For
-   instance, according to a study (Schwartz 2012), it is seen that
-   almost all cultures around the world attach a higher importance to
-   ‘universalism’ human value than the ’power’ basic human value. So
-   when the objective of the scoring is not simply to rank of importance
-   attached to each of them, then a comparative importance with respect
-   to overall observations needs to be tackled.
+   importance attributed to each issue out of a given set of issues. For
+   instance, it is possible that a great many individuals or political
+   leaders would attach a higher importance to individual liberties than
+   secuirty or otherway around. But the question might be rather to
+   understand to what extend one attaches more importance to an issue
+   more than the others. So when the objective of the scoring is not
+   simply to make an order of importance, then a comparative importance
+   with respect to overall observations needs to be tackled.
 
    *Observed variances in each query texts can be considered. That is, a
    simple statistical methods can be used for instance to be able to
@@ -343,18 +344,17 @@ interval.
    quantile-normalized scores that is suggested above using the
    estimated coefficient of variation in each case.*
 
-   *When this rescaling is applied for instance to universalism versus
-   power or liberty vs security the coeffcient of variation would act as
-   a polarization measure.*
+   *When this rescaling is applied, for instance, liberty vs security
+   the coeffcient of variation would act as a polarization measure.*
 
-Scoring and value system profiling
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Scoring a group of variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When one attempts to use scores, for instance, around the basic ten
-human values and one wants to construct the value system of the person,
-then both ranking of the scores as well as the relevant importance of
-each score from a number of texts from the same person should be taken
-into consideration.
+When one attempts to use scores generated by this package, using
+specific vs reference corpus comparisons, on a group of variable then
+both ranking of the scores as well as the relevant importance of each
+score from a number of texts from the same source should be taken into
+consideration.
 
 5. State of the art
 -------------------

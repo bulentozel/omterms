@@ -1,4 +1,4 @@
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 __title__ = 'omterms'
 __description__ = 'A customizable keyword extraction package.'
 __url__ = 'http://github.com/bulentozel/omterms'
