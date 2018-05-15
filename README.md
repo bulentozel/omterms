@@ -46,6 +46,10 @@ pip install .
 ```
 
 ## A quick use
+```bash
+python
+```
+
 ```python
 >>> from omterms.interface import *
 >>> extract_terms("Some input X text to process less then 3 seconds.").head()
