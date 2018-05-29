@@ -93,11 +93,10 @@ class WikiArticles(object):
         
         """
         themes = dict()
-        count = 0
         for article in self.collection:
             theme_id = article['theme.id']
             if theme_id not in themes.keys():
-                themes[theme_id] = (article['theme'], 0)
+                themes[theme_id] = (article['theme'], 1)
             else:
                 t,c = themes[theme_id]
                 c += 1
@@ -221,6 +220,21 @@ class WikiArticles(object):
         texts = [d['text'] for d in docs]
         text = marker.join(texts)
         return text
+
+    def to_json(self, fname='wikiarticles.json'):
+        """The method serializes the collection, that is it writes to the designated place on the disk.
+
+        Args:
+            fname (:obj:`str`): The outputfile.
+
+        Returns:
+            (:obj:`bool`): Returns True for the success.
+
+        """
+        with open(fname, 'w') as outfile:
+            json.dump(self.collection, outfile)
+            print('The current set of the wikiarticles is written to file {}.'.format(fname))
+        return True
  
 class Corpus(object):
     """A generic class to be used for foreground or background corpuses.
